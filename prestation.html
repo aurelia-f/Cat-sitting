@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Cat Sitting — Prestation</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header">
+  <button class="header-back" id="back-btn">←</button>
+  <div style="flex:1">
+    <h1 id="page-title">Prestation</h1>
+    <p id="page-sub"></p>
+  </div>
+</div>
+
+<div class="container" id="form-container"></div>
+
+<div style="padding:0 16px 30px;max-width:480px;margin:0 auto">
+  <button class="btn btn-primary" id="save-btn">💾 Sauvegarder</button>
+  <p id="save-status" style="text-align:center;font-size:13px;margin-top:8px;color:var(--green)"></p>
+</div>
+
+<script src="storage.js"></script>
+<script src="prestation.js"></script>
+</body>
+</html>

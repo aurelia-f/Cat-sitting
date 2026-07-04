@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Cat Sitting — Fiche</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header">
+  <button class="header-back" onclick="goTo('accueil.html')">←</button>
+  <div style="flex:1">
+    <h1 id="fiche-title">Fiche</h1>
+  </div>
+</div>
+
+<!-- Onglets -->
+<div class="tabs" style="top:58px">
+  <button class="tab active" id="tab-character" onclick="switchTab('character')">🐾 Caractère</button>
+  <button class="tab" id="tab-info" onclick="switchTab('info')">📋 Infos</button>
+  <button class="tab" id="tab-prestations" onclick="switchTab('prestations')">💶 Prestations</button>
+</div>
+
+<!-- Onglet Caractère -->
+<div class="tab-content active container" id="content-character"></div>
+
+<!-- Onglet Infos -->
+<div class="tab-content container" id="content-info"></div>
+
+<!-- Onglet Prestations -->
+<div class="tab-content container" id="content-prestations"></div>
+
+<!-- Bouton sauvegarder -->
+<div style="padding:0 16px 20px;max-width:480px;margin:0 auto">
+  <button class="btn btn-primary" onclick="saveFiche()">💾 Sauvegarder</button>
+  <p id="save-status" style="text-align:center;font-size:13px;margin-top:8px;color:var(--green)"></p>
+</div>
+
+<script src="storage.js"></script>
+<script src="fiche.js"></script>
+</body>
+</html>

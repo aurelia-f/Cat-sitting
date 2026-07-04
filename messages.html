@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Cat Sitting — Messages</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header">
+  <button class="header-back" onclick="goTo('accueil.html')">←</button>
+  <h1>📬 Historique des messages</h1>
+</div>
+
+<div class="tabs">
+  <button class="tab" onclick="goTo('accueil.html')">🏠 Accueil</button>
+  <button class="tab" onclick="goTo('calendrier.html')">📅 Calendrier</button>
+  <button class="tab active">📬 Messages</button>
+</div>
+
+<div class="container" id="content"></div>
+
+<script src="storage.js"></script>
+<script>
+  if (!getCurrentUser()) goTo("index.html");
+  const hist = getHistory();
+  const profiles = getProfiles();
+  const el = document.getElementById("content");
+
+  if (!hist.length) {
+    el.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-lt)">
+      <div style="font-size:48px;margin-bottom:12px">📬</div>
+      <p style="font-size:14px">Aucun message envoyé pour l'instant.</p>
+    </div>`;
+  } else {
+    [...hist].reverse().forEach(h => {
+      el.innerHTML += `
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-weight:bold;font-size:14px;color:var(--text)">${animalEmoji(profiles[h.animalName]?.animal_type)} ${h.animalName}</span>
+            <span style="font-size:12px;color:var(--text-lt)">${fmtDateTime(h.date)}</span>
+          </div>
+          <div class="message-box">${h.message}</div>
+        </div>`;
+    });
+  }
+</script>
+</body>
+</html>

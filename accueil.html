@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
- 
+
 <!-- Header -->
 <div class="header">
   <div style="flex:1">
@@ -17,39 +17,39 @@
   </div>
   <button class="switch-btn" onclick="logout()">Changer →</button>
 </div>
- 
+
 <!-- Tabs -->
 <div class="tabs">
   <button class="tab active" onclick="showTab('home')">🏠 Accueil</button>
   <button class="tab" onclick="goTo('calendrier.html')">📅 Calendrier</button>
   <button class="tab" onclick="goTo('messages.html')">📬 Messages</button>
 </div>
- 
+
 <div class="container">
- 
+
   <!-- Créer une fiche -->
   <button class="btn btn-primary" onclick="goTo('fiche.html?new=1')"
     style="margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:10px">
     🐾 Créer une nouvelle fiche
   </button>
- 
+
   <!-- Stats -->
   <div class="stats-bar" id="stats"></div>
- 
+
   <!-- Gardes à venir -->
   <div id="gardes-section"></div>
- 
+
   <!-- RDV Clés -->
   <div id="cles-section"></div>
- 
+
   <!-- Mes animaux -->
   <div id="animaux-section"></div>
- 
+
   <!-- Récap toutes prestations -->
   <div id="recap-section"></div>
- 
+
 </div>
- 
+
 <script src="storage.js"></script>
 <script src="accueil.js"></script>
 </body>

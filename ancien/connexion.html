@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Cat Sitting">
+  <title>Cat Sitting — Connexion</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    .login-hero {
+      background: var(--accent);
+      padding: 48px 20px 36px;
+      text-align: center;
+    }
+    .login-hero h1 { color: white; font-size: 28px; margin-bottom: 6px; }
+    .login-hero p  { color: rgba(255,255,255,0.85); font-size: 15px; margin: 0; }
+    .login-body { padding: 30px 16px; }
+    .user-row {
+      display: flex; gap: 8px;
+      align-items: center; margin-bottom: 10px;
+    }
+    .user-btn {
+      flex: 1; padding: 16px 20px;
+      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      background: var(--card);
+      cursor: pointer; font-size: 16px;
+      font-weight: bold; color: var(--text);
+      display: flex; align-items: center;
+      gap: 14px; font-family: Georgia, serif;
+      box-shadow: var(--shadow);
+      transition: border-color 0.15s;
+    }
+    .user-btn:hover { border-color: var(--accent); }
+    .del-btn {
+      padding: 10px 12px; border-radius: 12px;
+      background: white; border: 1px solid var(--border);
+      color: var(--text-lt); cursor: pointer; font-size: 16px;
+      transition: border-color 0.15s;
+    }
+    .del-btn:hover { border-color: var(--red); color: var(--red); }
+    .confirm-row { display: flex; gap: 6px; }
+    .section-sep {
+      text-align: center; color: var(--text-lt);
+      font-size: 13px; margin: 20px 0 14px;
+      position: relative;
+    }
+    .section-sep::before, .section-sep::after {
+      content: ""; position: absolute; top: 50%;
+      width: 35%; height: 1px; background: var(--border);
+    }
+    .section-sep::before { left: 0; }
+    .section-sep::after  { right: 0; }
+  </style>
+</head>
+<body>
+ 
+<div class="login-hero">
+  <h1>🐾 Cat Sitting 🐾</h1>
+  <p>Qui es-tu ? ✨</p>
+</div>
+ 
+<div class="login-body">
+  <div id="users-list"></div>
+ 
+  <div id="new-user-section">
+    <div class="card">
+      <label class="field-label" id="new-label">Entre ton prénom pour commencer</label>
+      <input type="text" id="new-input" placeholder="Ton prénom..." autocomplete="off"
+        style="margin-bottom:12px" onkeydown="if(event.key==='Enter') addUser()">
+      <button class="btn btn-primary" onclick="addUser()">C'est parti ! →</button>
+    </div>
+  </div>
+</div>
+ 
+<script src="storage.js"></script>
+<script src="login.js"></script>
+</body>
+</html>
