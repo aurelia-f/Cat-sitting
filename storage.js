@@ -1,163 +1,387 @@
-// ═══════════════════════════════════
-// STORAGE — lecture/écriture localStorage
-// ═══════════════════════════════════
+/* ============================================
+   CAT SITTING — storage.js
+   Fonctions partagées : stockage, tri, calcul, utils
+   DOIT être chargé EN PREMIER dans chaque page HTML
+   ============================================ */
 
+/* ---------- Stockage bas niveau ---------- */
 const Storage = {
   get(key) {
-    try { return JSON.parse(localStorage.getItem(key)); } catch(e) { return null; }
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.error("Storage.get error", key, e);
+      return null;
+    }
   },
   set(key, value) {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch(e) {}
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e) {
+      console.error("Storage.set error", key, e);
+      return false;
+    }
   },
   remove(key) {
-    try { localStorage.removeItem(key); } catch(e) {}
+    localStorage.removeItem(key);
   }
 };
 
+/* ---------- Utilisateur courant ---------- */
+function getCurrentUser() {
+  return localStorage.getItem("cs-current-user") || null;
+}
+
+function getCurrentUserName() {
+  return localStorage.getItem("cs-current-name") || "";
+}
+
+function setCurrentUser(key, name) {
+  localStorage.setItem("cs-current-user", key);
+  localStorage.setItem("cs-current-name", name);
+}
+
+function logoutCurrentUser() {
+  localStorage.removeItem("cs-current-user");
+  localStorage.removeItem("cs-current-name");
+}
+
 function userKey(suffix) {
-  const u = Storage.get("cs-current-user") || "default";
+  const u = getCurrentUser() || "guest";
   return `cs-${u}-${suffix}`;
 }
 
-function getProfiles()   { return Storage.get(userKey("profiles")) || {}; }
-function saveProfiles(p) { Storage.set(userKey("profiles"), p); }
+/* ---------- Données principales (par utilisateur) ---------- */
+function getProfiles() {
+  return Storage.get(userKey("profiles")) || {};
+}
+function saveProfiles(p) {
+  return Storage.set(userKey("profiles"), p);
+}
 
-function getHistory()    { return Storage.get(userKey("history")) || []; }
-function saveHistory(h)  { Storage.set(userKey("history"), h); }
-
-function getCalEvents()  { return Storage.get(userKey("calendar")) || {}; }
-function saveCalEvents(c){ Storage.set(userKey("calendar"), c); }
+function getCalEvents() {
+  return Storage.get(userKey("calevents")) || {};
+}
+function saveCalEvents(c) {
+  return Storage.set(userKey("calevents"), c);
+}
 
 function getTarifs() {
-  return Storage.get("cs-tarifs") || {
-    independant: { nom:"Indépendant",  desc:"1 visite de 30 min tous les 2 jours", visites:0.5, prix:null, parVisite:true },
-    classique:   { nom:"Classique",    desc:"1 visite de 30 min / jour",           visites:1,   prix:9,    parVisite:true },
-    delicat:     { nom:"Délicat",      desc:"2 visites de 30 min / jour",          visites:2,   prix:10,   parVisite:true },
-    calin:       { nom:"Câlin",        desc:"1 visite de 1h / jour",               visites:1,   prix:15,   parVisite:true },
-    royal:       { nom:"Royal",        desc:"1 visite de 2h / jour",               visites:1,   prix:null, parVisite:true },
-    nuit:        { nom:"Garde de nuit",desc:"Dort à domicile",                     visites:1,   prix:null, parVisite:false },
-    diabetique:  { nom:"Diabétique",   desc:"2 visites + injection insuline",      visites:2,   prix:null, parVisite:true },
-  };
+  return Storage.get(userKey("tarifs")) || DEFAULT_TARIFS;
 }
-function saveTarifs(t) { Storage.set("cs-tarifs", t); }
-
-// ── Utilitaires ──
-function fmtDate(d) {
-  if (!d) return "";
-  return new Date(d).toLocaleDateString("fr-FR", { day:"numeric", month:"long" });
-}
-function fmtShort(d) {
-  if (!d) return "";
-  return new Date(d).toLocaleDateString("fr-FR", { day:"numeric", month:"short" });
-}
-function fmtDateTime(iso) {
-  if (!iso) return "";
-  return new Date(iso).toLocaleDateString("fr-FR", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" });
-}
-function animalEmoji(types) {
-  if (!types?.length) return "🐾";
-  if (types.includes("Chat"))  return "🐱";
-  if (types.includes("Chien")) return "🐶";
-  if (types.includes("Lapin")) return "🐰";
-  return "🐾";
+function saveTarifs(t) {
+  return Storage.set(userKey("tarifs"), t);
 }
 
-function calcPrestation(p) {
-  if (!p) return { days:0, totalVisits:0, basePrice:0, keyPrice:0, total:0 };
-  const s = p.date_start ? new Date(p.date_start) : null;
-  const e = p.date_end   ? new Date(p.date_end)   : null;
-  const days = s && e ? Math.round((e - s) / (1000*60*60*24)) + 1 : 0;
-  const keyPrice = p.is_mcer ? 9 : (p.key_return_price ? Number(p.key_return_price) : 0);
-  let basePrice = 0, totalVisits = 0;
-  const tarifs = getTarifs();
-  if (p.is_mcer && p.mcer_key) {
-    const t = tarifs[p.mcer_key];
-    if (t && t.prix) {
-      totalVisits = days * t.visites;
-      basePrice   = totalVisits * t.prix;
-    }
-  } else if (p.prix_mode === "visite") {
-    const vpd = p.visits_per_day ? parseInt(p.visits_per_day) : 1;
-    totalVisits = days * vpd;
-    basePrice   = totalVisits * Number(p.price_per_visit || 0);
-  } else {
-    basePrice = Number(p.price_per_visit || 0);
-    totalVisits = days;
+/* ---------- Tarifs MCER par défaut ---------- */
+const DEFAULT_TARIFS = {
+  independant: { nom: "Indépendant", desc: "1 visite de 30 min tous les 2 jours", visites: 0.5, prix: null, parVisite: true },
+  classique:   { nom: "Classique",   desc: "1 visite de 30 min / jour",           visites: 1,   prix: 9,    parVisite: true },
+  delicat:     { nom: "Délicat",     desc: "2 visites de 30 min / jour",          visites: 2,   prix: 10,   parVisite: true },
+  calin:       { nom: "Câlin",       desc: "1 visite de 1h / jour",               visites: 1,   prix: 15,   parVisite: true },
+  royal:       { nom: "Royal",       desc: "1 visite de 2h / jour",               visites: 1,   prix: null, parVisite: true },
+  nuit:        { nom: "Garde de nuit", desc: "Dort à domicile",                   visites: 1,   prix: null, parVisite: false },
+  diabetique:  { nom: "Diabétique",  desc: "2 visites + injection insuline",      visites: 2,   prix: null, parVisite: true }
+};
+
+/* Clés MCER pour lesquelles le rendu des clés est automatiquement 9€ */
+const AUTO_KEY_RETURN_9 = ["classique", "delicat", "calin"];
+
+/* ---------- Tri alphabétique ---------- */
+function getSortedOwners() {
+  const profiles = getProfiles();
+  return Object.keys(profiles).sort((a, b) => {
+    const nameA = profiles[a].name || a;
+    const nameB = profiles[b].name || b;
+    return nameA.localeCompare(nameB, "fr");
+  });
+}
+
+function getSortedAnimals(key) {
+  const profiles = getProfiles();
+  const p = profiles[key];
+  if (!p) return [];
+  if (p.animals && p.animals.length > 0) {
+    return [...p.animals].sort((a, b) => (a.name || "").localeCompare(b.name || "", "fr"));
   }
-  const total = basePrice > 0 && (p.is_mcer || p.key_return_type) ? basePrice + keyPrice : 0;
+  // rétrocompatibilité : ancien format (fiche par animal)
+  if (p.name) {
+    return [{
+      name: p.name,
+      animal_type: p.animal_type || [],
+      animal_gender: p.animal_gender || "",
+      animal_age: p.animal_age || "",
+      is_cuddly: p.is_cuddly || "",
+      comes_to_me: p.comes_to_me || "",
+      is_playful: p.is_playful || "",
+      eats_how: p.eats_how || "",
+      personality: p.personality || [],
+      favorite_things: p.favorite_things || [],
+      dislikes: p.dislikes || [],
+      special_behavior: p.special_behavior || "",
+      has_litter: p.has_litter || "",
+      has_water: p.has_water || "",
+      has_croquettes: p.has_croquettes || "",
+      has_pate: p.has_pate || ""
+    }];
+  }
+  return [];
+}
+
+/* ---------- Calcul de prestation ---------- */
+function calcPrestation(p) {
+  if (!p || !p.date_start || !p.date_end) {
+    return { days: 0, totalVisits: 0, basePrice: 0, keyPrice: 0, total: 0 };
+  }
+  const start = new Date(p.date_start);
+  const end = new Date(p.date_end);
+  let days = Math.round((end - start) / 86400000) + 1;
+  if (days < 1) days = 1;
+
+  let visitesParJour = 1;
+  let prixParVisite = 0;
+
+  if (p.is_mcer && p.mcer_key) {
+    const t = DEFAULT_TARIFS[p.mcer_key];
+    if (t) {
+      visitesParJour = t.visites;
+      prixParVisite = (p.price_per_visit != null ? p.price_per_visit : t.prix) || 0;
+    }
+  } else {
+    visitesParJour = p.mcer_visites || 1;
+    prixParVisite = p.price_per_visit || 0;
+  }
+
+  let totalVisits = Math.round(days * visitesParJour * 100) / 100;
+
+  // Si la formule comporte 2 visites/jour, on ajuste selon le moment d'arrivée/départ
+  if (visitesParJour === 2) {
+    if (p.start_period === "apres-midi") totalVisits -= 1; // visite du matin manquée le 1er jour
+    if (p.end_period === "matin") totalVisits -= 1;         // visite du soir manquée le dernier jour
+    if (totalVisits < 0) totalVisits = 0;
+  }
+
+  const basePrice = (p.mcer_par_visite === false)
+    ? (prixParVisite * days)
+    : Math.round(totalVisits * prixParVisite * 100) / 100;
+
+  let keyPrice = 0;
+  if (p.key_return_type === "9") keyPrice = 9;
+  else if (p.key_return_type === "0") keyPrice = 0;
+  else if (p.key_return_type === "autre") keyPrice = parseFloat(p.key_return_price) || 0;
+  else keyPrice = parseFloat(p.key_return_price) || 0;
+
+  const total = Math.round((basePrice + keyPrice) * 100) / 100;
+
   return { days, totalVisits, basePrice, keyPrice, total };
 }
 
 function getAllPrestations() {
   const profiles = getProfiles();
   const all = [];
-  Object.values(profiles).forEach(p => {
-    (p.prestations || []).forEach(pr => {
-      all.push({ ...pr, animalName: p.name, animalTypes: p.animal_type });
+  Object.entries(profiles).forEach(([key, p]) => {
+    const animals = (p.animals && p.animals.length > 0)
+      ? [...p.animals].sort((a, b) => (a.name || "").localeCompare(b.name || "", "fr"))
+      : null;
+    const animalName = animals
+      ? animals.map(a => a.name).filter(Boolean).join(", ")
+      : (p.name || key);
+    const animalTypes = animals
+      ? animals.flatMap(a => a.animal_type || [])
+      : (p.animal_type || []);
+    (p.prestations || []).forEach((pr, idx) => {
+      all.push({
+        ...pr,
+        animalName: animalName || "À définir",
+        animalTypes,
+        ownerKey: key,
+        ownerName: p.name || key,
+        idx
+      });
     });
   });
   return all.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
 }
 
+function getGardesEnCours() {
+  const today = fmtISODate(new Date());
+  return getAllPrestations().filter(p => p.date_start <= today && p.date_end >= today);
+}
+
 function getGardesAvenir() {
-  const today = new Date(); today.setHours(0,0,0,0);
-  return getAllPrestations().filter(p => p.date_start && new Date(p.date_start) >= today);
+  const today = fmtISODate(new Date());
+  return getAllPrestations().filter(p => p.date_start > today);
+}
+
+function getClesARegler() {
+  const today = fmtISODate(new Date());
+  return getAllPrestations().filter(p => {
+    const finished = p.date_end < today;
+    const unresolved = (!p.keys_picked_up && p.keys_pickup_rdv !== undefined && p.key_return_type !== undefined)
+      ? false : false;
+    // Une garde est "clés à régler" si elle est terminée et que le rendu des clés n'a pas été fait
+    return finished && !p.keys_returned;
+  });
 }
 
 function getNextKeyRdvs() {
+  const now = new Date();
+  const items = [];
   const profiles = getProfiles();
-  const rdvs = [];
-  Object.values(profiles).forEach(p => {
-    (p.prestations || []).forEach(pr => {
-      if (!pr.keys_picked_up && (pr.keys_pickup_rdv || pr.keys_pickup_date))
-        rdvs.push({ nom:p.name, types:p.animal_type, rdv:pr.keys_pickup_rdv, date:pr.keys_pickup_date, time:pr.keys_pickup_time, type:"récupération" });
-      if (pr.keys_picked_up && !pr.keys_returned && (pr.keys_rdv || pr.keys_rdv_date))
-        rdvs.push({ nom:p.name, types:p.animal_type, rdv:pr.keys_rdv, date:pr.keys_rdv_date, time:pr.keys_rdv_time, type:"restitution" });
+  Object.entries(profiles).forEach(([key, p]) => {
+    (p.prestations || []).forEach((pr, idx) => {
+      const animals = getSortedAnimals(key);
+      const animalName = animals.map(a => a.name).filter(Boolean).join(", ") || "À définir";
+      if (!pr.keys_picked_up && pr.keys_pickup_date) {
+        const dt = new Date(`${pr.keys_pickup_date}T${pr.keys_pickup_time || "00:00"}`);
+        if (dt >= stripTime(now)) {
+          items.push({
+            type: "recuperation",
+            date: pr.keys_pickup_date,
+            time: pr.keys_pickup_time || "",
+            place: pr.keys_pickup_rdv || "",
+            ownerKey: key,
+            animalName,
+            idx
+          });
+        }
+      }
+      if (!pr.keys_returned && pr.keys_rdv_date) {
+        const dt = new Date(`${pr.keys_rdv_date}T${pr.keys_rdv_time || "00:00"}`);
+        if (dt >= stripTime(now)) {
+          items.push({
+            type: "rendu",
+            date: pr.keys_rdv_date,
+            time: pr.keys_rdv_time || "",
+            place: pr.keys_rdv || "",
+            ownerKey: key,
+            animalName,
+            idx
+          });
+        }
+      }
     });
   });
-  rdvs.sort((a,b) => {
-    const da = a.date ? new Date(a.date + (a.time ? "T"+a.time : "")) : new Date("9999");
-    const db = b.date ? new Date(b.date + (b.time ? "T"+b.time : "")) : new Date("9999");
+  return items.sort((a, b) => {
+    const da = new Date(`${a.date}T${a.time || "00:00"}`);
+    const db = new Date(`${b.date}T${b.time || "00:00"}`);
     return da - db;
   });
-  return rdvs;
+}
+
+function stripTime(d) {
+  const c = new Date(d);
+  c.setHours(0, 0, 0, 0);
+  return c;
 }
 
 function getAnimalsByDate(ds) {
   const profiles = getProfiles();
-  const res = [];
-  Object.values(profiles).forEach(p => {
+  const result = [];
+  Object.entries(profiles).forEach(([key, p]) => {
     (p.prestations || []).forEach(pr => {
-      if (!pr.date_start || !pr.date_end) return;
-      const s = new Date(pr.date_start), e = new Date(pr.date_end), d = new Date(ds);
-      if (d >= s && d <= e)
-        res.push({ animalName:p.name, animalTypes:p.animal_type, visitTime:pr.visit_time });
+      if (pr.date_start <= ds && pr.date_end >= ds) {
+        const animals = getSortedAnimals(key);
+        result.push({ ownerKey: key, animals, prestation: pr });
+      }
     });
   });
-  return res;
+  return result;
 }
 
 function getKeyRdvsByDate(ds) {
+  const all = [];
   const profiles = getProfiles();
-  const res = [];
-  Object.values(profiles).forEach(p => {
-    (p.prestations || []).forEach(pr => {
-      if (pr.keys_pickup_date === ds && !pr.keys_picked_up)
-        res.push({ nom:p.name, types:p.animal_type, type:"récup", time:pr.keys_pickup_time||"" });
-      if (pr.keys_rdv_date === ds && !pr.keys_returned)
-        res.push({ nom:p.name, types:p.animal_type, type:"rendu", time:pr.keys_rdv_time||"" });
+  Object.entries(profiles).forEach(([key, p]) => {
+    (p.prestations || []).forEach((pr, idx) => {
+      const animals = getSortedAnimals(key);
+      const animalName = animals.map(a => a.name).filter(Boolean).join(", ") || "À définir";
+      if (!pr.keys_picked_up && pr.keys_pickup_date === ds) {
+        all.push({ type: "recuperation", time: pr.keys_pickup_time || "", place: pr.keys_pickup_rdv || "", ownerKey: key, animalName, idx });
+      }
+      if (!pr.keys_returned && pr.keys_rdv_date === ds) {
+        all.push({ type: "rendu", time: pr.keys_rdv_time || "", place: pr.keys_rdv || "", ownerKey: key, animalName, idx });
+      }
     });
   });
-  res.sort((a,b) => (a.time||"99:99").localeCompare(b.time||"99:99"));
-  return res;
+  return all.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
 }
 
-function getDIM(y, m) { return new Date(y, m+1, 0).getDate(); }
-function getFDOM(y, m) { return (new Date(y, m, 1).getDay() + 6) % 7; }
-function fmtMonthYear(y, m) {
-  return new Date(y, m, 1).toLocaleDateString("fr-FR", { month:"long", year:"numeric" });
+/* ---------- Utils dates ---------- */
+function fmtISODate(d) {
+  const c = new Date(d);
+  const y = c.getFullYear();
+  const m = String(c.getMonth() + 1).padStart(2, "0");
+  const day = String(c.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
-function goTo(page) { window.location.href = page; }
-function getCurrentUser() { return Storage.get("cs-current-user") || ""; }
-function getCurrentUserName() { return Storage.get("cs-current-name") || getCurrentUser(); }
+const MOIS_FR = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+const JOURS_FR = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+
+function fmtDate(d) {
+  if (!d) return "";
+  const c = typeof d === "string" ? new Date(d + "T00:00:00") : new Date(d);
+  return `${JOURS_FR[c.getDay()]} ${c.getDate()} ${MOIS_FR[c.getMonth()]}`;
+}
+
+function fmtShort(d) {
+  if (!d) return "";
+  const c = typeof d === "string" ? new Date(d + "T00:00:00") : new Date(d);
+  return `${String(c.getDate()).padStart(2,"0")}/${String(c.getMonth()+1).padStart(2,"0")}`;
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return "";
+  const c = new Date(iso);
+  return `${fmtShort(c)} à ${String(c.getHours()).padStart(2,"0")}h${String(c.getMinutes()).padStart(2,"0")}`;
+}
+
+/* ---------- Emoji animal ---------- */
+function animalEmoji(types) {
+  if (!types || types.length === 0) return "🐾";
+  const t = types[0];
+  if (t === "Chat") return "🐱";
+  if (t === "Chien") return "🐶";
+  if (t === "Lapin") return "🐰";
+  return "🐾";
+}
+
+/* ---------- Navigation ---------- */
+function goTo(page) {
+  window.location.href = page;
+}
+
+/* ---------- Hash simple pour date de naissance ---------- */
+function simpleHash(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const chr = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  return hash.toString(36);
+}
+
+/* ---------- Génération de clé technique ---------- */
+function techKey(prefix) {
+  const clean = (prefix || "user").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  return `${clean}-${Date.now().toString(36)}`;
+}
+
+function ownerTechKey(ownerName) {
+  const clean = (ownerName || "proprio").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  return `${clean}-${Date.now().toString(36)}`;
+}
+
+/* ---------- Enregistrement du service worker (PWA) ---------- */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch((e) => console.warn("SW registration failed", e));
+  });
+}
+

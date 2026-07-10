@@ -1,53 +1,124 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Cat Sitting — Accueil</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cat Sitting — Accueil</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8896A">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="app">
 
-<!-- Header -->
-<div class="header">
-  <div style="flex:1">
-    <h1 style="display:flex;align-items:center;gap:8px">🐾 Cat Sitting</h1>
-    <p id="greeting"></p>
+  <div class="topbar">
+    <h1>🐾 Cat Sitting</h1>
+    <div class="icon-btn" id="calBtn" title="Calendrier">📅</div>
+    <div class="icon-btn" id="logoutBtn" title="Déconnexion">↩︎</div>
+    <div class="icon-btn" id="deleteAccountBtn" title="Supprimer mon compte" style="color:var(--red);">🗑</div>
   </div>
-  <button class="switch-btn" onclick="logout()">Changer →</button>
+
+  <button class="btn btn-primary" id="newProfileBtn" style="margin-bottom:20px;">🐾 Créer une nouvelle fiche</button>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="val" id="statTotal">0€</div>
+      <div class="lbl">Total</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" id="statAvenir">0</div>
+      <div class="lbl">Gardes à venir</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" id="statFiches">0</div>
+      <div class="lbl">Fiches</div>
+    </div>
+  </div>
+
+  <div class="section sec-orange">
+    <div class="section-head">
+      <h2>🟠 Gardes en cours</h2>
+      <span class="count" id="countEnCours">0</span>
+    </div>
+    <div id="listEnCours"></div>
+  </div>
+
+  <div class="section sec-blue">
+    <div class="section-head">
+      <h2>🔵 Gardes à venir</h2>
+      <span class="count" id="countAvenir">0</span>
+    </div>
+    <div id="listAvenir"></div>
+  </div>
+
+  <div class="section sec-red" id="secCles" style="display:none;">
+    <div class="section-head">
+      <h2>⚠️ Clés à régler</h2>
+      <span class="count" id="countCles">0</span>
+    </div>
+    <div id="listCles"></div>
+  </div>
+
+  <div class="section sec-purple">
+    <div class="section-head">
+      <h2>🔑 Prochains RDV clés</h2>
+      <span class="count" id="countRdv">0</span>
+    </div>
+    <div id="listRdv"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>🐾 Mes fiches</h2>
+      <span class="count" id="countFiches">0</span>
+    </div>
+    <div id="listFiches"></div>
+  </div>
+
+  <div class="section sec-green">
+    <div class="section-head">
+      <h2>🧾 Toutes les prestations</h2>
+      <span class="count" id="countPrestations">0</span>
+    </div>
+    <div id="listPrestations"></div>
+  </div>
+
 </div>
 
-<!-- Tabs -->
-<div class="tabs">
-  <button class="tab active" onclick="showTab('home')">🏠 Accueil</button>
-  <button class="tab" onclick="goTo('calendrier.html')">📅 Calendrier</button>
-  <button class="tab" onclick="goTo('messages.html')">📬 Messages</button>
+<!-- Modal : créer une fiche (nom du propriétaire) -->
+<div class="modal-overlay" id="modalNewFiche">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Nouvelle fiche</h3>
+      <button class="modal-close" data-close="modalNewFiche">✕</button>
+    </div>
+    <label>Nom du propriétaire</label>
+    <input type="text" id="ownerNameInput" placeholder="Ex : Marie Dupont">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close="modalNewFiche">Annuler</button>
+      <button class="btn btn-primary" id="confirmNewFiche">Créer</button>
+    </div>
+  </div>
 </div>
 
-<div class="container">
-
-  <!-- Créer une fiche -->
-  <button class="btn btn-primary" onclick="goTo('fiche.html?new=1')"
-    style="margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:10px">
-    🐾 Créer une nouvelle fiche
-  </button>
-
-  <!-- Stats -->
-  <div class="stats-bar" id="stats"></div>
-
-  <!-- Gardes à venir -->
-  <div id="gardes-section"></div>
-
-  <!-- RDV Clés -->
-  <div id="cles-section"></div>
-
-  <!-- Mes animaux -->
-  <div id="animaux-section"></div>
-
-  <!-- Récap toutes prestations -->
-  <div id="recap-section"></div>
-
+<!-- Modal : supprimer mon compte -->
+<div class="modal-overlay" id="modalDeleteAccount">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Supprimer mon compte</h3>
+      <button class="modal-close" data-close="modalDeleteAccount">✕</button>
+    </div>
+    <p class="small text-lt">Cette action est définitive : toutes tes fiches, prestations et visites planifiées seront supprimées. Confirme avec ta date de naissance.</p>
+    <label>Date de naissance</label>
+    <input type="date" id="deleteAccountDob">
+    <div class="field-hint" id="deleteAccountError" style="color:var(--red); display:none;">Date de naissance incorrecte.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close="modalDeleteAccount">Annuler</button>
+      <button class="btn btn-danger" id="confirmDeleteAccount">Supprimer définitivement</button>
+    </div>
+  </div>
 </div>
 
 <script src="storage.js"></script>

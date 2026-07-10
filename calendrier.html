@@ -1,64 +1,59 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Cat Sitting — Calendrier</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cat Sitting — Calendrier</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8896A">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="app">
 
-<div class="header">
-  <button class="header-back" onclick="goTo('accueil.html')">←</button>
-  <h1>📅 Calendrier</h1>
-</div>
-
-<div class="tabs">
-  <button class="tab" onclick="goTo('accueil.html')">🏠 Accueil</button>
-  <button class="tab active">📅 Calendrier</button>
-  <button class="tab" onclick="goTo('messages.html')">📬 Messages</button>
-</div>
-
-<div class="container">
-
-  <!-- Navigation mois -->
-  <div class="cal-nav">
-    <button class="cal-nav-btn" id="btn-prev">‹</button>
-    <span class="cal-nav-title" id="cal-title"></span>
-    <button class="cal-nav-btn" id="btn-next">›</button>
+  <div class="topbar">
+    <div class="back-btn" id="backBtn">←</div>
+    <h1>📅 Calendrier</h1>
   </div>
 
-  <!-- Jours de la semaine -->
-  <div class="cal-days-header">
-    <div class="cal-day-name">Lu</div>
-    <div class="cal-day-name">Ma</div>
-    <div class="cal-day-name">Me</div>
-    <div class="cal-day-name">Je</div>
-    <div class="cal-day-name">Ve</div>
-    <div class="cal-day-name">Sa</div>
-    <div class="cal-day-name">Di</div>
+  <div class="cal-head">
+    <div class="icon-btn" id="prevMonth">‹</div>
+    <div class="month-label" id="monthLabel"></div>
+    <div class="icon-btn" id="nextMonth">›</div>
   </div>
 
-  <!-- Grille -->
-  <div class="cal-grid" id="cal-grid"></div>
+  <div class="cal-grid" id="calDow"></div>
+  <div class="cal-grid mt-8" id="calGrid"></div>
 
-  <!-- Légende -->
-  <div class="cal-legend">
-    <div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--blue)"></span> Prestation</div>
-    <div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--purple)"></span> Visite planifiée</div>
-    <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#9B6AE8"></span> RDV clés</div>
+  <div class="mt-16 small text-lt">
+    🐾 Garde &nbsp; ⏰ Visite planifiée &nbsp; 🔑 RDV clés — la couleur indique le chat
+  </div>
+  <div class="mt-8" id="animalLegend" style="display:flex; flex-wrap:wrap; gap:6px 12px;"></div>
+
+  <div class="section mt-16">
+    <div class="section-head"><h2 id="dayDetailTitle">Sélectionnez un jour</h2></div>
+    <div id="dayDetail"></div>
   </div>
 
 </div>
 
-<!-- Modal planification -->
-<div class="modal-overlay hidden" id="modal-overlay" onclick="closeModal()">
-  <div class="modal" onclick="event.stopPropagation()">
-    <h3 id="modal-date"></h3>
-    <p>Planifie l'heure de visite</p>
-    <div id="modal-animals"></div>
-    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal()">Fermer</button>
+<!-- Modal : planifier une visite -->
+<div class="modal-overlay" id="modalVisite">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Planifier une visite</h3>
+      <button class="modal-close" data-close="modalVisite">✕</button>
+    </div>
+    <label>Animal</label>
+    <select id="visiteAnimalSelect"></select>
+    <label>Heure de la visite</label>
+    <input type="time" id="visiteTime">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close="modalVisite">Annuler</button>
+      <button class="btn btn-primary" id="saveVisiteBtn">Planifier</button>
+    </div>
   </div>
 </div>
 

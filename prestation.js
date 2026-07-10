@@ -1,283 +1,360 @@
-// ═══════════════════════════════════
-// PRESTATION.JS
-// ═══════════════════════════════════
+/* ============================================
+   CAT SITTING — prestation.js
+   ============================================ */
 
-if (!getCurrentUser()) goTo("index.html");
-
-const params   = new URLSearchParams(window.location.search);
-const animalName = params.get("name") || "";
-const isNew    = params.get("new") === "1";
-const editIdx  = params.get("idx") !== null ? parseInt(params.get("idx")) : null;
-
-const profiles = getProfiles();
-const animal   = profiles[animalName] || {};
-let prests     = [...(animal.prestations || [])];
-
-let form = isNew ? {} : (prests[editIdx] || {});
-
-const backUrl = `fiche.html?name=${encodeURIComponent(animalName)}`;
-document.getElementById("back-btn").onclick = () => goTo(backUrl);
-document.getElementById("page-title").textContent = isNew ? "Nouvelle prestation" : "Modifier la prestation";
-document.getElementById("page-sub").textContent = animalName;
-
-let tarifs = getTarifs();
-let showCorrection = false;
-let correctionKey  = null;
-
-function isMCER() { return document.getElementById("mode-mcer")?.classList.contains("selected"); }
-
-function render() {
-  const c = form;
-  const mcer = c.is_mcer;
-  const { days, totalVisits, basePrice, keyPrice, total } = calcPrestation(form);
-
-  document.getElementById("form-container").innerHTML = `
-
-    <!-- Dates & horaires -->
-    <div class="card card-left-accent">
-      <div class="section-label">📅 Dates & horaires</div>
-      <div class="date-row" style="margin-bottom:10px">
-        <div>
-          <label class="sub-label">Début</label>
-          <input type="date" id="f-date_start" value="${c.date_start||""}" onchange="setField('date_start',this.value)">
-        </div>
-        <div>
-          <label class="sub-label">Fin</label>
-          <input type="date" id="f-date_end" value="${c.date_end||""}" onchange="setField('date_end',this.value)">
-        </div>
-      </div>
-      <label class="sub-label">🔔 Heure de visite habituelle</label>
-      <input type="text" placeholder="Ex: 8h30 et 18h00" value="${c.visit_time||""}" onchange="setField('visit_time',this.value)">
-    </div>
-
-    <!-- Suivi des clés -->
-    <div class="card card-left-accent">
-      <div class="section-label">🔑 Suivi des clés</div>
-
-      <label class="chk-label">
-        <div class="chk-box ${c.keys_picked_up?"checked":""}" onclick="toggleField('keys_picked_up')"></div>
-        ✅ J'ai récupéré les clés
-      </label>
-      ${!c.keys_picked_up ? `
-        <div style="margin-left:32px;margin-bottom:8px">
-          <label class="sub-label">📅 RDV pour récupérer les clés</label>
-          <div class="date-row" style="margin-bottom:6px">
-            <input type="date" value="${c.keys_pickup_date||""}" onchange="setField('keys_pickup_date',this.value)">
-            <input type="time" value="${c.keys_pickup_time||""}" onchange="setField('keys_pickup_time',this.value)">
-          </div>
-          <input type="text" placeholder="Ex: Chez le client, dans le hall..." value="${c.keys_pickup_rdv||""}" onchange="setField('keys_pickup_rdv',this.value)">
-        </div>` : ""}
-
-      <label class="chk-label">
-        <div class="chk-box ${c.keys_returned?"checked":""}" onclick="toggleField('keys_returned')"></div>
-        ✅ J'ai rendu les clés
-      </label>
-      ${!c.keys_returned ? `
-        <div style="margin-left:32px">
-          <label class="sub-label">📅 RDV pour rendre les clés</label>
-          <div class="date-row" style="margin-bottom:6px">
-            <input type="date" value="${c.keys_rdv_date||""}" onchange="setField('keys_rdv_date',this.value)">
-            <input type="time" value="${c.keys_rdv_time||""}" onchange="setField('keys_rdv_time',this.value)">
-          </div>
-          <input type="text" placeholder="Ex: Chez le client, dans le hall..." value="${c.keys_rdv||""}" onchange="setField('keys_rdv',this.value)">
-        </div>` : ""}
-    </div>
-
-    <!-- Tarification -->
-    <div class="card">
-      <div class="section-label">💶 Tarification</div>
-      <div class="pills">
-        <button type="button" class="pill ${mcer?"selected":""}" id="mode-mcer" onclick="setMode(true)">Formule MCER</button>
-        <button type="button" class="pill ${!mcer?"selected":""}" id="mode-manuel" onclick="setMode(false)">Prix manuel</button>
-      </div>
-
-      ${mcer ? renderMCER() : renderManuel()}
-    </div>
-
-    <!-- Rendu des clés (tarif) — seulement si pas MCER -->
-    ${!mcer && (c.price_per_visit||c.prix_total) ? `
-    <div class="card card-left-blue">
-      <div class="section-label">🔑 Rendu des clés (tarif)</div>
-      <div class="options">
-        ${["non|Pas de rendu (0€)","9|Tarif standard (9€)","custom|Autre montant"].map(o=>{
-          const [val,lbl]=o.split("|");
-          return `<button type="button" class="option${c.key_return_type===val?" selected-blue":""}" onclick="setKeyReturn('${val}')">${c.key_return_type===val?"✓ ":""}${lbl}</button>`;
-        }).join("")}
-      </div>
-      ${c.key_return_type==="custom" ? `
-        <div class="price-wrap">
-          <input type="number" placeholder="Montant" value="${c.key_return_price||""}" oninput="setField('key_return_price',this.value)">
-          <span class="euro">€</span>
-        </div>` : ""}
-    </div>` : ""}
-
-    <!-- Paiement -->
-    ${(mcer ? c.mcer_key : (c.price_per_visit||c.prix_total)) ? `
-    <div class="card card-left-green">
-      <div class="section-label">💳 Paiement</div>
-      <div class="options" style="margin-bottom:10px">
-        ${["attente|⏳ En attente","paye|✅ Payé"].map(o=>{
-          const [val,lbl]=o.split("|");
-          return `<button type="button" class="option${c.payment_status===val?" selected-green":""}" onclick="setField('payment_status','${val}');render()">${c.payment_status===val?"✓ ":""}${lbl}</button>`;
-        }).join("")}
-      </div>
-      <input type="text" placeholder="Mode de paiement (virement, espèces...)" value="${c.payment_mode||""}" oninput="setField('payment_mode',this.value)">
-    </div>` : ""}
-
-    <!-- Récap -->
-    ${total > 0 ? `
-    <div class="recap">
-      <div class="section-label">🧮 Récapitulatif</div>
-      ${c.date_start ? `<div style="font-size:13px;color:var(--text-lt);margin-bottom:6px">📅 ${fmtDate(c.date_start)} → ${fmtDate(c.date_end)} (${days} j)</div>` : ""}
-      ${c.mcer_nom ? `<div style="font-size:13px;color:var(--text-lt);margin-bottom:6px">📋 Formule ${c.mcer_nom}</div>` : ""}
-      <div class="recap-row">
-        <span>${c.is_mcer ? `${totalVisits} visite${totalVisits>1?"s":""} × ${tarifs[c.mcer_key]?.prix||0}€` : c.prix_mode==="visite" ? `${totalVisits} visite${totalVisits>1?"s":""} × ${c.price_per_visit}€` : "Forfait"}</span>
-        <span style="font-weight:bold;color:var(--text)">${basePrice}€</span>
-      </div>
-      ${c.is_mcer ? `
-        <div class="recap-row"><span>🔑 Rendu des clés</span><span style="font-weight:bold">+9€</span></div>` :
-        c.key_return_type==="non" ? `<div class="recap-row"><span>🔑 Clés</span><span style="color:var(--green);font-weight:bold">Offert</span></div>` :
-        keyPrice > 0 ? `<div class="recap-row"><span>🔑 Clés</span><span style="font-weight:bold">+${keyPrice}€</span></div>` : ""}
-      <div class="recap-total"><span>Total</span><span style="color:var(--accent)">${total}€</span></div>
-      ${c.payment_status ? `<div style="margin-top:6px;font-size:13px;color:${c.payment_status==="paye"?"var(--green)":"var(--text-lt)"};font-weight:bold">${c.payment_status==="paye"?"✅ Payé":"⏳ En attente"}${c.payment_mode?" — "+c.payment_mode:""}</div>` : ""}
-    </div>` : ""}
-  `;
+if (!getCurrentUser()) {
+  goTo("index.html");
 }
 
-function renderMCER() {
-  const c = form;
-  let html = `<div class="options">`;
-  Object.entries(tarifs).forEach(([key, t]) => {
-    const sel = c.mcer_key === key;
-    const pxD = t.prix ? `${t.prix}€/visite` : "Tarif à définir →";
-    html += `<button type="button" class="option${sel?" selected":""}" onclick="selectMCER('${key}')">
-      <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
-        <div>
-          <div style="font-weight:bold">${sel?"✓ ":""}${t.nom}</div>
-          <div style="font-size:11px;color:var(--text-lt);margin-top:2px">${t.desc}</div>
-        </div>
-        <span style="font-size:13px;font-weight:bold;color:${t.prix?"var(--accent)":"var(--text-lt)"}">${pxD}</span>
-      </div>
-    </button>`;
+const params = new URLSearchParams(window.location.search);
+const ownerKey = params.get("key");
+const isNew = params.get("new") === "1";
+const editIdx = params.get("idx") !== null ? parseInt(params.get("idx")) : null;
+
+if (!ownerKey) goTo("accueil.html");
+
+let profiles = getProfiles();
+let profile = profiles[ownerKey];
+if (!profile) goTo("accueil.html");
+if (!profile.prestations) profile.prestations = [];
+
+let prestation = isNew ? {} : JSON.parse(JSON.stringify(profile.prestations[editIdx] || {}));
+
+document.getElementById("backBtn").addEventListener("click", () => goTo(`fiche.html?key=${encodeURIComponent(ownerKey)}`));
+
+/* ---------- Build MCER pill group ---------- */
+const mcerGroup = document.getElementById("mcerPillGroup");
+Object.entries(DEFAULT_TARIFS).forEach(([key, t]) => {
+  const pill = document.createElement("div");
+  pill.className = "pill";
+  pill.dataset.mcerKey = key;
+  pill.textContent = t.nom;
+  mcerGroup.appendChild(pill);
+});
+
+/* ---------- State helpers ---------- */
+function setSwitch(el, on) {
+  el.classList.toggle("on", !!on);
+}
+function isOn(el) {
+  return el.classList.contains("on");
+}
+
+/* ---------- Toggles: clés récupérées / rendues ---------- */
+const swPickedUp = document.getElementById("sw_keys_picked_up");
+const swReturned = document.getElementById("sw_keys_returned");
+const pickupBlock = document.getElementById("pickupRdvBlock");
+const returnBlock = document.getElementById("returnRdvBlock");
+
+function refreshKeyBlocks() {
+  pickupBlock.style.display = isOn(swPickedUp) ? "none" : "block";
+  returnBlock.style.display = isOn(swReturned) ? "none" : "block";
+}
+
+swPickedUp.addEventListener("click", () => { setSwitch(swPickedUp, !isOn(swPickedUp)); refreshKeyBlocks(); });
+swReturned.addEventListener("click", () => { setSwitch(swReturned, !isOn(swReturned)); refreshKeyBlocks(); });
+
+/* ---------- Mode tarif (MCER vs manuel) ---------- */
+const tarifModeGroup = document.getElementById("tarifModeGroup");
+const mcerBlock = document.getElementById("mcerBlock");
+const manuelBlock = document.getElementById("manuelBlock");
+const keyPriceSection = document.getElementById("keyPriceSection");
+
+let tarifMode = "mcer"; // mcer | manuel
+let selectedMcerKey = null;
+
+tarifModeGroup.querySelectorAll(".pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    tarifModeGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+    pill.classList.add("selected");
+    tarifMode = pill.dataset.mode;
+    mcerBlock.style.display = tarifMode === "mcer" ? "block" : "none";
+    manuelBlock.style.display = tarifMode === "manuel" ? "block" : "none";
+    keyPriceSection.style.display = tarifMode === "manuel" ? "block" : "none";
+    refreshPeriodSection();
   });
-  html += `</div>`;
+});
 
-  // Bouton correction
-  html += `<button type="button" style="background:none;border:none;color:var(--text-lt);font-size:12px;cursor:pointer;text-decoration:underline;padding:4px 0;margin-top:4px" onclick="toggleCorrection()">🔧 Corriger un tarif</button>`;
+mcerGroup.querySelectorAll(".pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    mcerGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+    pill.classList.add("selected");
+    selectedMcerKey = pill.dataset.mcerKey;
+    const t = DEFAULT_TARIFS[selectedMcerKey];
+    document.getElementById("mcerDesc").textContent = t.desc;
+    document.getElementById("price_per_visit_mcer").value = t.prix != null ? t.prix : "";
+    refreshPeriodSection();
+  });
+});
 
-  if (showCorrection) {
-    html += `<div class="correction-box">
-      <div style="font-size:12px;color:var(--text-lt);margin-bottom:8px">Quel tarif veux-tu corriger ?</div>
-      ${Object.entries(tarifs).map(([key,t])=>`
-        <button type="button" class="option" style="margin-bottom:6px" onclick="startCorrection('${key}')">
-          ${t.nom} — <span style="color:var(--accent);font-weight:bold">${t.prix?t.prix+"€":"non défini"}</span>
-        </button>`).join("")}
-    </div>`;
+/* ---------- Rendu des clés (mode manuel) ---------- */
+const keyReturnGroup = document.getElementById("keyReturnPillGroup");
+const keyReturnAutreBlock = document.getElementById("keyReturnAutreBlock");
+let keyReturnType = "0";
+
+keyReturnGroup.querySelectorAll(".pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    keyReturnGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+    pill.classList.add("selected");
+    keyReturnType = pill.dataset.keyReturn;
+    keyReturnAutreBlock.style.display = keyReturnType === "autre" ? "block" : "none";
+    updateRecap();
+  });
+});
+
+/* ---------- Début / fin de journée (si 2 visites/jour) ---------- */
+const periodSection = document.getElementById("periodSection");
+const startPeriodGroup = document.getElementById("startPeriodGroup");
+const endPeriodGroup = document.getElementById("endPeriodGroup");
+
+function currentVisitesParJour() {
+  if (tarifMode === "mcer" && selectedMcerKey) {
+    const t = DEFAULT_TARIFS[selectedMcerKey];
+    return t ? t.visites : 1;
+  }
+  return parseFloat(document.getElementById("mcer_visites").value) || 1;
+}
+
+function refreshPeriodSection() {
+  const show = currentVisitesParJour() === 2;
+  periodSection.style.display = show ? "block" : "none";
+  if (show) {
+    if (!startPeriodGroup.querySelector(".pill.selected")) {
+      startPeriodGroup.querySelector('[data-period="matin"]').classList.add("selected");
+    }
+    if (!endPeriodGroup.querySelector(".pill.selected")) {
+      endPeriodGroup.querySelector('[data-period="apres-midi"]').classList.add("selected");
+    }
+  }
+  updateRecap();
+}
+
+startPeriodGroup.querySelectorAll(".pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    startPeriodGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+    pill.classList.add("selected");
+    updateRecap();
+  });
+});
+endPeriodGroup.querySelectorAll(".pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    endPeriodGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+    pill.classList.add("selected");
+    updateRecap();
+  });
+});
+
+/* ---------- Paiement ---------- */
+const paymentStatusGroup = document.getElementById("paymentStatusGroup");
+const paymentModeGroup = document.getElementById("paymentModeGroup");
+
+paymentStatusGroup.querySelectorAll(".pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    paymentStatusGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+    pill.classList.add("selected");
+  });
+});
+paymentModeGroup.querySelectorAll(".pill").forEach(pill => {
+  pill.addEventListener("click", () => {
+    paymentModeGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+    pill.classList.add("selected");
+  });
+});
+
+/* ---------- Recalc on date/price change ---------- */
+["date_start", "date_end", "price_per_visit_mcer", "mcer_visites", "price_per_visit_manuel", "key_return_price_autre"]
+  .forEach(id => {
+    document.getElementById(id).addEventListener("input", updateRecap);
+  });
+
+document.getElementById("sw_par_visite").addEventListener("click", function () {
+  setSwitch(this, !isOn(this));
+  updateRecap();
+});
+
+document.getElementById("mcer_visites").addEventListener("input", refreshPeriodSection);
+
+function buildPrestationObject() {
+  const p = {
+    date_start: document.getElementById("date_start").value,
+    date_end: document.getElementById("date_end").value,
+    visit_time: document.getElementById("visit_time").value.trim(),
+    keys_picked_up: isOn(swPickedUp),
+    keys_pickup_date: document.getElementById("keys_pickup_date").value,
+    keys_pickup_time: document.getElementById("keys_pickup_time").value,
+    keys_pickup_rdv: document.getElementById("keys_pickup_rdv").value.trim(),
+    keys_returned: isOn(swReturned),
+    keys_rdv_date: document.getElementById("keys_rdv_date").value,
+    keys_rdv_time: document.getElementById("keys_rdv_time").value,
+    keys_rdv: document.getElementById("keys_rdv").value.trim(),
+    is_mcer: tarifMode === "mcer"
+  };
+
+  if (tarifMode === "mcer") {
+    const t = DEFAULT_TARIFS[selectedMcerKey] || {};
+    p.mcer_key = selectedMcerKey;
+    p.mcer_nom = t.nom || "";
+    p.mcer_visites = t.visites || 1;
+    p.mcer_par_visite = t.parVisite !== false;
+    p.price_per_visit = parseFloat(document.getElementById("price_per_visit_mcer").value) || 0;
+    p.key_return_type = AUTO_KEY_RETURN_9.includes(selectedMcerKey) ? "9" : "0";
+    p.key_return_price = p.key_return_type === "9" ? "9" : "0";
+  } else {
+    p.mcer_key = null;
+    p.mcer_nom = "Manuel";
+    p.mcer_visites = parseFloat(document.getElementById("mcer_visites").value) || 1;
+    p.mcer_par_visite = isOn(document.getElementById("sw_par_visite"));
+    p.price_per_visit = parseFloat(document.getElementById("price_per_visit_manuel").value) || 0;
+    p.key_return_type = keyReturnType;
+    p.key_return_price = keyReturnType === "autre"
+      ? (document.getElementById("key_return_price_autre").value || "0")
+      : keyReturnType;
   }
 
-  if (correctionKey) {
-    const t = tarifs[correctionKey];
-    html += `<div class="correction-box" style="margin-top:6px">
-      <div style="font-size:12px;color:var(--text-lt);margin-bottom:8px">🔧 Correction — ${t.nom}</div>
-      <div class="pills" style="margin-bottom:8px">
-        <button type="button" class="pill ${corrMode==="prestation"?"selected":""}" onclick="setCorrMode('prestation')">Par prestation</button>
-        <button type="button" class="pill ${corrMode==="visite"?"selected":""}" onclick="setCorrMode('visite')">Par visite</button>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div class="price-wrap" style="flex:1">
-          <input type="number" id="corr-val" placeholder="Nouveau prix" value="${t.prix||""}" style="font-size:16px;font-weight:bold">
-          <span class="euro">€</span>
-        </div>
-        <button type="button" class="btn btn-primary btn-small" onclick="saveCorrection('${correctionKey}')">✓</button>
-        <button type="button" class="btn btn-small" style="background:white;border:1px solid var(--border);color:var(--text-lt)" onclick="correctionKey=null;render()">✕</button>
-        <button type="button" class="btn btn-small" style="background:white;border:1px solid var(--red);color:var(--red)" onclick="annulTarif('${correctionKey}')">🗑</button>
-      </div>
-    </div>`;
+  const statusPill = paymentStatusGroup.querySelector(".pill.selected");
+  p.payment_status = statusPill ? statusPill.dataset.status : "attente";
+  const modePill = paymentModeGroup.querySelector(".pill.selected");
+  p.payment_mode = modePill ? modePill.dataset.pmode : "";
+
+  const startPill = startPeriodGroup.querySelector(".pill.selected");
+  p.start_period = startPill ? startPill.dataset.period : "matin";
+  const endPill = endPeriodGroup.querySelector(".pill.selected");
+  p.end_period = endPill ? endPill.dataset.period : "apres-midi";
+
+  return p;
+}
+
+function updateRecap() {
+  const p = buildPrestationObject();
+  const calc = calcPrestation(p);
+
+  const recapSection = document.getElementById("recapSection");
+  const paymentSection = document.getElementById("paymentSection");
+
+  if (calc.total > 0) {
+    recapSection.style.display = "block";
+    paymentSection.style.display = "block";
+    document.getElementById("recap_days").textContent = `${calc.days} jour${calc.days > 1 ? "s" : ""}`;
+    document.getElementById("recap_visits").textContent = calc.totalVisits;
+    document.getElementById("recap_base").textContent = `${calc.basePrice}€`;
+    document.getElementById("recap_key").textContent = `${calc.keyPrice}€`;
+    document.getElementById("recap_total").textContent = `${calc.total}€`;
+  } else {
+    recapSection.style.display = "none";
+    paymentSection.style.display = "none";
+  }
+}
+
+/* ---------- Load existing data ---------- */
+function loadExisting() {
+  if (isNew || !prestation || Object.keys(prestation).length === 0) {
+    // valeurs par défaut
+    mcerGroup.querySelector('[data-mcer-key="classique"]')?.click();
+    keyReturnGroup.querySelector('[data-key-return="0"]').click();
+    paymentStatusGroup.querySelector('[data-status="attente"]').click();
+    refreshKeyBlocks();
+    refreshPeriodSection();
+    return;
   }
 
-  return html;
+  document.getElementById("date_start").value = prestation.date_start || "";
+  document.getElementById("date_end").value = prestation.date_end || "";
+  document.getElementById("visit_time").value = prestation.visit_time || "";
+
+  setSwitch(swPickedUp, !!prestation.keys_picked_up);
+  document.getElementById("keys_pickup_date").value = prestation.keys_pickup_date || "";
+  document.getElementById("keys_pickup_time").value = prestation.keys_pickup_time || "";
+  document.getElementById("keys_pickup_rdv").value = prestation.keys_pickup_rdv || "";
+
+  setSwitch(swReturned, !!prestation.keys_returned);
+  document.getElementById("keys_rdv_date").value = prestation.keys_rdv_date || "";
+  document.getElementById("keys_rdv_time").value = prestation.keys_rdv_time || "";
+  document.getElementById("keys_rdv").value = prestation.keys_rdv || "";
+  refreshKeyBlocks();
+
+  tarifMode = prestation.is_mcer !== false && prestation.mcer_key ? "mcer" : "manuel";
+  tarifModeGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+  tarifModeGroup.querySelector(`[data-mode="${tarifMode}"]`).classList.add("selected");
+  mcerBlock.style.display = tarifMode === "mcer" ? "block" : "none";
+  manuelBlock.style.display = tarifMode === "manuel" ? "block" : "none";
+  keyPriceSection.style.display = tarifMode === "manuel" ? "block" : "none";
+
+  if (tarifMode === "mcer" && prestation.mcer_key) {
+    selectedMcerKey = prestation.mcer_key;
+    const pill = mcerGroup.querySelector(`[data-mcer-key="${selectedMcerKey}"]`);
+    if (pill) {
+      mcerGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+      pill.classList.add("selected");
+      document.getElementById("mcerDesc").textContent = DEFAULT_TARIFS[selectedMcerKey].desc;
+    }
+    document.getElementById("price_per_visit_mcer").value = prestation.price_per_visit != null ? prestation.price_per_visit : "";
+  } else {
+    document.getElementById("mcer_visites").value = prestation.mcer_visites || 1;
+    document.getElementById("price_per_visit_manuel").value = prestation.price_per_visit || "";
+    setSwitch(document.getElementById("sw_par_visite"), prestation.mcer_par_visite !== false);
+    keyReturnType = prestation.key_return_type || "0";
+    keyReturnGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+    const krPill = keyReturnGroup.querySelector(`[data-key-return="${keyReturnType}"]`);
+    if (krPill) krPill.classList.add("selected");
+    keyReturnAutreBlock.style.display = keyReturnType === "autre" ? "block" : "none";
+    if (keyReturnType === "autre") {
+      document.getElementById("key_return_price_autre").value = prestation.key_return_price || "";
+    }
+  }
+
+  paymentStatusGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+  const statusPill = paymentStatusGroup.querySelector(`[data-status="${prestation.payment_status || "attente"}"]`);
+  if (statusPill) statusPill.classList.add("selected");
+
+  paymentModeGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+  if (prestation.payment_mode) {
+    const modePill = paymentModeGroup.querySelector(`[data-pmode="${prestation.payment_mode}"]`);
+    if (modePill) modePill.classList.add("selected");
+  }
+
+  startPeriodGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+  if (prestation.start_period) {
+    const sp = startPeriodGroup.querySelector(`[data-period="${prestation.start_period}"]`);
+    if (sp) sp.classList.add("selected");
+  }
+  endPeriodGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+  if (prestation.end_period) {
+    const ep = endPeriodGroup.querySelector(`[data-period="${prestation.end_period}"]`);
+    if (ep) ep.classList.add("selected");
+  }
+
+  refreshPeriodSection();
 }
 
-function renderManuel() {
-  const c = form;
-  return `
-    <div class="pills" style="margin-bottom:10px">
-      <button type="button" class="pill ${(c.prix_mode||"prestation")==="prestation"?"selected":""}" onclick="setPrixMode('prestation')">Par prestation</button>
-      <button type="button" class="pill ${c.prix_mode==="visite"?"selected":""}" onclick="setPrixMode('visite')">Par visite</button>
-    </div>
-    <div class="price-wrap">
-      <input type="number" placeholder="${c.prix_mode==="visite"?"Prix par visite":"Prix total de la prestation"}"
-        value="${c.price_per_visit||""}" oninput="setField('price_per_visit',this.value)">
-      <span class="euro">€</span>
-    </div>`;
-}
+loadExisting();
 
-// ── Handlers ──
-function setField(key, val) { form[key] = val; }
-function toggleField(key) { form[key] = !form[key]; render(); }
+/* ---------- Save ---------- */
+document.getElementById("saveBtn").addEventListener("click", () => {
+  const dateStart = document.getElementById("date_start").value;
+  const dateEnd = document.getElementById("date_end").value;
+  if (!dateStart || !dateEnd) {
+    alert("Merci de renseigner les dates de début et de fin.");
+    return;
+  }
+  if (dateEnd < dateStart) {
+    alert("La date de fin doit être après la date de début.");
+    return;
+  }
 
-function setMode(mcer) {
-  form.is_mcer = mcer;
-  if (!mcer) { form.mcer_key = null; form.mcer_nom = null; }
-  render();
-}
+  const p = buildPrestationObject();
 
-function selectMCER(key) {
-  const t = tarifs[key];
-  if (!t.prix) { correctionKey = key; corrMode = "visite"; showCorrection = false; render(); return; }
-  const autoKey = ["classique","delicat","calin"].includes(key);
-  form.is_mcer = true;
-  form.mcer_key = key;
-  form.mcer_nom = t.nom;
-  form.mcer_visites = t.visites;
-  form.mcer_par_visite = t.parVisite;
-  form.price_per_visit = t.prix;
-  if (autoKey) { form.key_return_type = "9"; form.key_return_price = "9"; }
-  correctionKey = null; showCorrection = false;
-  render();
-}
+  profiles = getProfiles();
+  profile = profiles[ownerKey];
+  if (!profile) { goTo("accueil.html"); return; }
+  if (!profile.prestations) profile.prestations = [];
 
-function setKeyReturn(val) {
-  form.key_return_type = val;
-  form.key_return_price = val==="9"?"9":val==="non"?"0":"";
-  render();
-}
-function setPrixMode(mode) { form.prix_mode = mode; render(); }
-
-let corrMode = "visite";
-function toggleCorrection() { showCorrection = !showCorrection; correctionKey = null; render(); }
-function startCorrection(key) { correctionKey = key; corrMode = tarifs[key].parVisite?"visite":"prestation"; showCorrection = false; render(); }
-function setCorrMode(m) { corrMode = m; render(); }
-function saveCorrection(key) {
-  const val = document.getElementById("corr-val")?.value;
-  if (!val) return;
-  tarifs[key] = { ...tarifs[key], prix: Number(val), parVisite: corrMode==="visite" };
-  saveTarifs(tarifs);
-  correctionKey = null;
-  // Re-select if this was the selected formula
-  if (form.mcer_key === key) selectMCER(key);
-  else render();
-}
-function annulTarif(key) {
-  tarifs[key] = { ...tarifs[key], prix: null };
-  saveTarifs(tarifs);
-  if (form.mcer_key === key) { form.mcer_key = null; form.mcer_nom = null; }
-  correctionKey = null; render();
-}
-
-// ── Save ──
-document.getElementById("save-btn").onclick = () => {
-  const profiles = getProfiles();
-  const animal = profiles[animalName] || {};
-  let prests = [...(animal.prestations || [])];
-
-  if (isNew) prests.push(form);
-  else if (editIdx !== null) prests[editIdx] = form;
-
-  profiles[animalName] = { ...animal, prestations: prests };
+  if (isNew) {
+    profile.prestations.push(p);
+  } else {
+    profile.prestations[editIdx] = p;
+  }
+  profiles[ownerKey] = profile;
   saveProfiles(profiles);
-  document.getElementById("save-status").textContent = "✓ Prestation sauvegardée !";
-  setTimeout(() => goTo(backUrl), 800);
-};
 
-render();
+  goTo(`fiche.html?key=${encodeURIComponent(ownerKey)}`);
+});

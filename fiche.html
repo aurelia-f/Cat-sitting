@@ -1,41 +1,198 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Cat Sitting — Fiche</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cat Sitting — Fiche</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8896A">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="app">
 
-<div class="header">
-  <button class="header-back" onclick="goTo('accueil.html')">←</button>
-  <div style="flex:1">
-    <h1 id="fiche-title">Fiche</h1>
+  <div class="topbar">
+    <div class="back-btn" id="backBtn">←</div>
+    <h1 id="ficheTitle">Fiche</h1>
   </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="animaux">🐾 Animaux</button>
+    <button class="tab-btn" data-tab="infos">📋 Infos</button>
+    <button class="tab-btn" data-tab="prestations">💶 Prestations</button>
+  </div>
+
+  <!-- ONGLET ANIMAUX -->
+  <div class="tab-panel active" id="panel-animaux">
+    <div id="animalsList"></div>
+    <button class="btn btn-outline mt-8" id="addAnimalBtn">+ Ajouter un animal</button>
+  </div>
+
+  <!-- ONGLET INFOS -->
+  <div class="tab-panel" id="panel-infos">
+    <label>Nom du propriétaire</label>
+    <input type="text" id="info_owner_name">
+
+    <label>Téléphone</label>
+    <input type="tel" id="info_owner_phone" placeholder="06 12 34 56 78">
+
+    <label>Adresse</label>
+    <input type="text" id="info_address" placeholder="12 rue des Lilas, Paris 11e">
+
+    <label>Code d'accès</label>
+    <input type="text" id="info_access_code" placeholder="Ex : B1234">
+
+    <label>Vétérinaire</label>
+    <input type="text" id="info_vet" placeholder="Dr Martin, 01 23 45 67 89">
+
+    <label>Nourriture</label>
+    <textarea id="info_food" placeholder="Ex : 1 sachet matin + croquettes le soir"></textarea>
+
+    <label>Notes santé</label>
+    <textarea id="info_health_notes" placeholder="Ex : Prend un comprimé le matin"></textarea>
+
+    <label>Notes particulières</label>
+    <textarea id="info_special_notes" placeholder="Ex : Ne pas ouvrir la fenêtre du salon"></textarea>
+  </div>
+
+  <!-- ONGLET PRESTATIONS -->
+  <div class="tab-panel" id="panel-prestations">
+    <div id="prestationsList"></div>
+    <button class="btn btn-outline mt-8" id="addPrestationBtn">+ Ajouter une prestation</button>
+  </div>
+
+  <button class="btn btn-primary mt-16" id="saveBtn">💾 Sauvegarder</button>
+  <button class="btn btn-danger btn-block mt-8" id="deleteFicheBtn">🗑 Supprimer cette fiche</button>
+
 </div>
 
-<!-- Onglets -->
-<div class="tabs" style="top:58px">
-  <button class="tab active" id="tab-character" onclick="switchTab('character')">🐾 Caractère</button>
-  <button class="tab" id="tab-info" onclick="switchTab('info')">📋 Infos</button>
-  <button class="tab" id="tab-prestations" onclick="switchTab('prestations')">💶 Prestations</button>
-</div>
+<!-- Modal Animal -->
+<div class="modal-overlay" id="modalAnimal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="animalModalTitle">Ajouter un animal</h3>
+      <button class="modal-close" data-close="modalAnimal">✕</button>
+    </div>
 
-<!-- Onglet Caractère -->
-<div class="tab-content active container" id="content-character"></div>
+    <label>Prénom</label>
+    <input type="text" id="a_name" placeholder="Ex : Luna">
 
-<!-- Onglet Infos -->
-<div class="tab-content container" id="content-info"></div>
+    <label>Type d'animal</label>
+    <div class="pill-group" data-field="animal_type" data-multi="1">
+      <div class="pill" data-value="Chat">Chat</div>
+      <div class="pill" data-value="Chien">Chien</div>
+      <div class="pill" data-value="Lapin">Lapin</div>
+      <div class="pill" data-value="Autre">Autre</div>
+    </div>
 
-<!-- Onglet Prestations -->
-<div class="tab-content container" id="content-prestations"></div>
+    <label>Sexe</label>
+    <div class="pill-group" data-field="animal_gender">
+      <div class="pill" data-value="Mâle">Mâle</div>
+      <div class="pill" data-value="Femelle">Femelle</div>
+    </div>
 
-<!-- Bouton sauvegarder -->
-<div style="padding:0 16px 20px;max-width:480px;margin:0 auto">
-  <button class="btn btn-primary" onclick="saveFiche()">💾 Sauvegarder</button>
-  <p id="save-status" style="text-align:center;font-size:13px;margin-top:8px;color:var(--green)"></p>
+    <label>Âge</label>
+    <div class="pill-group" data-field="animal_age">
+      <div class="pill" data-value="Chaton / Jeune (- 1 an)">Chaton / Jeune (- 1 an)</div>
+      <div class="pill" data-value="Adulte (1-7 ans)">Adulte (1-7 ans)</div>
+      <div class="pill" data-value="Senior (7 ans +)">Senior (7 ans +)</div>
+    </div>
+
+    <label>Niveau de câlins</label>
+    <div class="pill-group" data-field="is_cuddly">
+      <div class="pill" data-value="Très câlin(e)">Très câlin(e)</div>
+      <div class="pill" data-value="Un peu câlin(e)">Un peu câlin(e)</div>
+      <div class="pill" data-value="Pas trop câlin(e)">Pas trop câlin(e)</div>
+      <div class="pill" data-value="Indépendant(e)">Indépendant(e)</div>
+    </div>
+
+    <label>Vient spontanément</label>
+    <div class="pill-group" data-field="comes_to_me">
+      <div class="pill" data-value="Oui, tout le temps">Oui, tout le temps</div>
+      <div class="pill" data-value="Parfois">Parfois</div>
+      <div class="pill" data-value="Pas vraiment">Pas vraiment</div>
+      <div class="pill" data-value="Se cache">Se cache</div>
+    </div>
+
+    <label>Joueur</label>
+    <div class="pill-group" data-field="is_playful">
+      <div class="pill" data-value="Très joueur/joueuse">Très joueur/joueuse</div>
+      <div class="pill" data-value="Un peu joueur/joueuse">Un peu joueur/joueuse</div>
+      <div class="pill" data-value="Pas vraiment">Pas vraiment</div>
+      <div class="pill" data-value="Dort beaucoup">Dort beaucoup</div>
+    </div>
+
+    <label>Rapport à la nourriture</label>
+    <div class="pill-group" data-field="eats_how">
+      <div class="pill" data-value="Mange tout de suite">Mange tout de suite</div>
+      <div class="pill" data-value="Mange à son rythme">Mange à son rythme</div>
+      <div class="pill" data-value="Difficile">Difficile</div>
+      <div class="pill" data-value="Très gourmand(e)">Très gourmand(e)</div>
+    </div>
+
+    <label>Personnalité</label>
+    <div class="pill-group" data-field="personality" data-multi="1">
+      <div class="pill" data-value="Timide">Timide</div>
+      <div class="pill" data-value="Curieux/se">Curieux/se</div>
+      <div class="pill" data-value="Collant(e)">Collant(e)</div>
+      <div class="pill" data-value="Dominant(e)">Dominant(e)</div>
+      <div class="pill" data-value="Peureux/se">Peureux/se</div>
+      <div class="pill" data-value="Bavard(e)">Bavard(e)</div>
+      <div class="pill" data-value="Calme">Calme</div>
+      <div class="pill" data-value="Aventurier/ère">Aventurier/ère</div>
+    </div>
+
+    <label>Ce qu'il/elle adore</label>
+    <div class="pill-group" data-field="favorite_things" data-multi="1">
+      <div class="pill" data-value="Caresses sur la tête">Caresses sur la tête</div>
+      <div class="pill" data-value="Caresses sur le ventre">Caresses sur le ventre</div>
+      <div class="pill" data-value="Jouer avec une canne">Jouer avec une canne</div>
+      <div class="pill" data-value="Les jouets">Les jouets</div>
+      <div class="pill" data-value="Regarder par la fenêtre">Regarder par la fenêtre</div>
+      <div class="pill" data-value="Les hauteurs">Les hauteurs</div>
+      <div class="pill" data-value="Être dans les bras">Être dans les bras</div>
+      <div class="pill" data-value="Ronronner sur les genoux">Ronronner sur les genoux</div>
+    </div>
+
+    <label>Ce qu'il/elle n'aime pas</label>
+    <div class="pill-group" data-field="dislikes" data-multi="1">
+      <div class="pill" data-value="Être pris(e) dans les bras">Être pris(e) dans les bras</div>
+      <div class="pill" data-value="Les bruits forts">Les bruits forts</div>
+      <div class="pill" data-value="Les inconnus">Les inconnus</div>
+      <div class="pill" data-value="Être seul(e)">Être seul(e)</div>
+      <div class="pill" data-value="Trop de câlins">Trop de câlins</div>
+      <div class="pill" data-value="Qu'on touche son ventre">Qu'on touche son ventre</div>
+    </div>
+
+    <label>Comportement particulier</label>
+    <textarea id="a_special_behavior" placeholder="Ex : Miaule beaucoup quand elle a faim"></textarea>
+
+    <div class="divider"></div>
+
+    <div class="toggle-row">
+      <span class="toggle-label">Litière à nettoyer</span>
+      <div class="switch" data-toggle="has_litter"><div class="knob"></div></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Eau à changer</span>
+      <div class="switch" data-toggle="has_water"><div class="knob"></div></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Croquettes à remettre</span>
+      <div class="switch" data-toggle="has_croquettes"><div class="knob"></div></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Pâtée à donner</span>
+      <div class="switch" data-toggle="has_pate"><div class="knob"></div></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close="modalAnimal">Annuler</button>
+      <button class="btn btn-primary" id="saveAnimalBtn">Enregistrer</button>
+    </div>
+  </div>
 </div>
 
 <script src="storage.js"></script>

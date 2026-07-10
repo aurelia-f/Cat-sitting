@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cat Sitting">
+  <meta name="theme-color" content="#E8896A">
+  <title>Cat Sitting — Fiche</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header">
+  <button class="header-back" onclick="goBack()">←</button>
+  <div style="flex:1">
+    <h1 id="fiche-title">Fiche</h1>
+    <p id="fiche-sub" style="color:rgba(255,255,255,0.85);font-size:12px"></p>
+  </div>
+</div>
+
+<!-- Onglets -->
+<div class="tabs" style="top:58px">
+  <button class="tab active" id="tab-animaux"      onclick="switchTab('animaux')">🐾 Animaux</button>
+  <button class="tab"        id="tab-info"          onclick="switchTab('info')">📋 Infos</button>
+  <button class="tab"        id="tab-prestations"   onclick="switchTab('prestations')">💶 Prestations</button>
+</div>
+
+<!-- Onglet Animaux -->
+<div class="tab-content active container" id="content-animaux"></div>
+
+<!-- Onglet Infos -->
+<div class="tab-content container" id="content-info"></div>
+
+<!-- Onglet Prestations -->
+<div class="tab-content container" id="content-prestations"></div>
+
+<!-- Bouton sauvegarder -->
+<div style="padding:0 16px 30px;max-width:480px;margin:0 auto">
+  <button class="btn btn-primary" onclick="saveFiche()">💾 Sauvegarder</button>
+  <p id="save-status" style="text-align:center;font-size:13px;margin-top:8px;color:var(--green)"></p>
+</div>
+
+<!-- Modal animal -->
+<div class="modal-overlay hidden" id="animal-modal" onclick="">
+  <div class="modal" onclick="event.stopPropagation()" style="max-height:85vh;overflow-y:auto">
+    <h3 id="modal-animal-title">Animal</h3>
+    <div id="modal-animal-form"></div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-primary" onclick="saveAnimal()">✓ Sauvegarder</button>
+      <button class="btn btn-outline" onclick="closeAnimalModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script src="storage.js"></script>
+<script src="fiche.js"></script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>

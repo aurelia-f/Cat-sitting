@@ -1,27 +1,168 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Cat Sitting — Prestation</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cat Sitting — Prestation</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8896A">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="app">
 
-<div class="header">
-  <button class="header-back" id="back-btn">←</button>
-  <div style="flex:1">
-    <h1 id="page-title">Prestation</h1>
-    <p id="page-sub"></p>
+  <div class="topbar">
+    <div class="back-btn" id="backBtn">←</div>
+    <h1>Prestation</h1>
   </div>
-</div>
 
-<div class="container" id="form-container"></div>
+  <!-- 1. Dates & horaires -->
+  <div class="section sec-blue">
+    <div class="section-head"><h2>📅 Dates & horaires</h2></div>
+    <div class="card">
+      <label>Date de début</label>
+      <input type="date" id="date_start">
+      <label>Date de fin</label>
+      <input type="date" id="date_end">
+      <label>Heure habituelle de visite</label>
+      <input type="text" id="visit_time" placeholder="Ex : 8h30 et 18h00">
+    </div>
+  </div>
 
-<div style="padding:0 16px 30px;max-width:480px;margin:0 auto">
-  <button class="btn btn-primary" id="save-btn">💾 Sauvegarder</button>
-  <p id="save-status" style="text-align:center;font-size:13px;margin-top:8px;color:var(--green)"></p>
+  <!-- 1bis. Début/Fin matin ou après-midi (si 2 visites/jour) -->
+  <div class="section sec-blue" id="periodSection" style="display:none;">
+    <div class="section-head"><h2>🌗 Début & fin de journée</h2></div>
+    <div class="card">
+      <div class="card-sub mt-8">Cette formule prévoit 2 visites par jour. Précise le moment d'arrivée et de départ pour ajuster le nombre de visites facturées.</div>
+      <label class="mt-16">Le 1er jour, tu commences...</label>
+      <div class="pill-group" id="startPeriodGroup">
+        <div class="pill" data-period="matin">Le matin</div>
+        <div class="pill" data-period="apres-midi">L'après-midi</div>
+      </div>
+      <label class="mt-16">Le dernier jour, tu termines...</label>
+      <div class="pill-group" id="endPeriodGroup">
+        <div class="pill" data-period="matin">Le matin</div>
+        <div class="pill" data-period="apres-midi">L'après-midi</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Suivi des clés -->
+  <div class="section sec-purple">
+    <div class="section-head"><h2>🔑 Suivi des clés</h2></div>
+    <div class="card">
+      <div class="toggle-row">
+        <span class="toggle-label">Clés récupérées</span>
+        <div class="switch" id="sw_keys_picked_up"><div class="knob"></div></div>
+      </div>
+      <div id="pickupRdvBlock">
+        <label>Date du RDV de récupération</label>
+        <input type="date" id="keys_pickup_date">
+        <label>Heure</label>
+        <input type="time" id="keys_pickup_time">
+        <label>Lieu</label>
+        <input type="text" id="keys_pickup_rdv" placeholder="Ex : Chez la cliente">
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="toggle-row">
+        <span class="toggle-label">Clés rendues</span>
+        <div class="switch" id="sw_keys_returned"><div class="knob"></div></div>
+      </div>
+      <div id="returnRdvBlock">
+        <label>Date du RDV de rendu</label>
+        <input type="date" id="keys_rdv_date">
+        <label>Heure</label>
+        <input type="time" id="keys_rdv_time">
+        <label>Lieu</label>
+        <input type="text" id="keys_rdv" placeholder="Ex : Boîte aux lettres">
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Tarification -->
+  <div class="section sec-green">
+    <div class="section-head"><h2>💶 Tarification</h2></div>
+    <div class="card">
+      <div class="pill-group" id="tarifModeGroup">
+        <div class="pill selected tag-green" data-mode="mcer">Formule MCER</div>
+        <div class="pill tag-green" data-mode="manuel">Prix libre</div>
+      </div>
+
+      <div id="mcerBlock" class="mt-16">
+        <label>Formule</label>
+        <div class="pill-group" id="mcerPillGroup"></div>
+        <div class="card-sub mt-8" id="mcerDesc"></div>
+        <label>Prix par visite (€)</label>
+        <input type="number" id="price_per_visit_mcer" step="0.5" min="0">
+      </div>
+
+      <div id="manuelBlock" class="mt-16" style="display:none;">
+        <label>Nombre de visites par jour</label>
+        <input type="number" id="mcer_visites" step="0.5" min="0">
+        <label>Prix par visite (€)</label>
+        <input type="number" id="price_per_visit_manuel" step="0.5" min="0">
+        <div class="toggle-row">
+          <span class="toggle-label">Tarif par visite (sinon par jour)</span>
+          <div class="switch on" id="sw_par_visite"><div class="knob"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Rendu des clés tarif -->
+  <div class="section sec-purple" id="keyPriceSection">
+    <div class="section-head"><h2>🔑 Rendu des clés (tarif)</h2></div>
+    <div class="card">
+      <div class="pill-group" id="keyReturnPillGroup">
+        <div class="pill tag-purple" data-key-return="0">0€</div>
+        <div class="pill tag-purple" data-key-return="9">9€</div>
+        <div class="pill tag-purple" data-key-return="autre">Autre</div>
+      </div>
+      <div id="keyReturnAutreBlock" style="display:none;">
+        <label>Montant (€)</label>
+        <input type="number" id="key_return_price_autre" step="0.5" min="0">
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Paiement -->
+  <div class="section" id="paymentSection" style="display:none;">
+    <div class="section-head"><h2>💳 Paiement</h2></div>
+    <div class="card">
+      <label>Statut</label>
+      <div class="pill-group" id="paymentStatusGroup">
+        <div class="pill" data-status="attente">En attente</div>
+        <div class="pill" data-status="paye">Payé</div>
+      </div>
+      <label>Mode de paiement</label>
+      <div class="pill-group" id="paymentModeGroup">
+        <div class="pill" data-pmode="virement">Virement</div>
+        <div class="pill" data-pmode="especes">Espèces</div>
+        <div class="pill" data-pmode="cheque">Chèque</div>
+        <div class="pill" data-pmode="cb">CB</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Récapitulatif -->
+  <div class="section sec-orange" id="recapSection" style="display:none;">
+    <div class="section-head"><h2>🧮 Récapitulatif</h2></div>
+    <div class="card tint-orange">
+      <div class="flex-between"><span>Durée</span><span id="recap_days"></span></div>
+      <div class="flex-between mt-8"><span>Visites totales</span><span id="recap_visits"></span></div>
+      <div class="flex-between mt-8"><span>Prestation</span><span id="recap_base"></span></div>
+      <div class="flex-between mt-8"><span>Rendu des clés</span><span id="recap_key"></span></div>
+      <div class="divider"></div>
+      <div class="flex-between"><strong>Total</strong><strong id="recap_total"></strong></div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary mt-16" id="saveBtn">💾 Enregistrer la prestation</button>
+
 </div>
 
 <script src="storage.js"></script>

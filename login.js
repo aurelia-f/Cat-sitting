@@ -1,132 +1,156 @@
-// ═══════════════════════════════════
-// LOGIN.JS — Authentification prénom + date de naissance
-// ═══════════════════════════════════
+/* ============================================
+   CAT SITTING — login.js
+   Connexion : prénom + date de naissance (mot de passe)
+   ============================================ */
 
-// Structure stockée : { name: "Aurélia", dob: "1995-03-15", key: "aurelia" }
-let users = Storage.get("cs-users-v2") || [];
-let confirmDelete = null;
-let loginTarget = null; // utilisateur en cours de connexion
+const USERS_KEY = "cs-users-v2";
+let pendingLoginKey = null;
 
-function hashDob(dob) {
-  // Simple hash de la date pour ne pas la stocker en clair
-  let h = 0;
-  for (let i = 0; i < dob.length; i++) {
-    h = ((h << 5) - h) + dob.charCodeAt(i);
-    h |= 0;
-  }
-  return String(Math.abs(h));
+function getUsers() {
+  return Storage.get(USERS_KEY) || [];
+}
+function saveUsers(users) {
+  Storage.set(USERS_KEY, users);
 }
 
-function userStorageKey(u) {
-  return u.key || u.name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+function openModal(id) {
+  document.getElementById(id).classList.add("open");
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove("open");
 }
 
-function render() {
-  const list = document.getElementById("users-list");
-  list.innerHTML = "";
-
-  if (users.length > 0) {
-    const title = document.createElement("p");
-    title.style.cssText = "font-weight:bold;font-size:15px;color:var(--text);margin-bottom:14px;text-align:center";
-    title.textContent = "Choisis ton profil";
-    list.appendChild(title);
-
-    users.forEach(u => {
-      const row = document.createElement("div");
-      row.className = "user-row";
-
-      if (confirmDelete === u.key) {
-        row.innerHTML = `
-          <span style="flex:1;font-weight:bold;font-size:14px;color:var(--text)">Supprimer ${u.name} ?</span>
-          <button class="btn btn-danger btn-small" onclick="deleteUser('${u.key}')">Oui</button>
-          <button class="btn btn-outline btn-small" onclick="cancelDelete()">Non</button>`;
-      } else {
-        row.innerHTML = `
-          <button class="user-btn" onclick="openLogin('${u.key}')">
-            <span style="font-size:28px">🐾</span>
-            <span>${u.name}</span>
-          </button>
-          <button class="del-btn" onclick="askDelete('${u.key}')">🗑</button>`;
-      }
-      list.appendChild(row);
-    });
-
-    const sep = document.createElement("div");
-    sep.className = "section-sep";
-    sep.innerHTML = "<span style='background:var(--bg);padding:0 10px'>ou</span><hr style='position:absolute;width:100%;top:50%;left:0;border:none;border-top:1px solid var(--border);z-index:-1'>";
-    sep.style.position = "relative";
-    list.appendChild(sep);
-
-    document.getElementById("new-label").textContent = "Créer un nouveau profil";
-  }
-}
-
-function openLogin(key) {
-  loginTarget = users.find(u => u.key === key);
-  document.getElementById("modal-name").textContent = `Bonjour ${loginTarget.name} 👋`;
-  document.getElementById("login-dob").value = "";
-  document.getElementById("login-error").textContent = "";
-  document.getElementById("login-modal").classList.remove("hidden");
-  setTimeout(() => document.getElementById("login-dob").focus(), 100);
-}
-
-function closeLoginModal() {
-  document.getElementById("login-modal").classList.add("hidden");
-  loginTarget = null;
-}
-
-function login() {
-  if (!loginTarget) return;
-  const dob = document.getElementById("login-dob").value;
-  if (!dob) { document.getElementById("login-error").textContent = "Entre ta date de naissance."; return; }
-  if (hashDob(dob) === loginTarget.dobHash) {
-    Storage.set("cs-current-user", loginTarget.key);
-    Storage.set("cs-current-name", loginTarget.name);
-    goTo("accueil.html");
-  } else {
-    document.getElementById("login-error").textContent = "❌ Date incorrecte, réessaie.";
-  }
-}
-
-function createAccount() {
-  const name = document.getElementById("new-name").value.trim();
-  const dob  = document.getElementById("new-dob").value;
-  const errEl = document.getElementById("new-error");
-
-  if (!name) { errEl.textContent = "Entre ton prénom."; return; }
-  if (!dob)  { errEl.textContent = "Entre ta date de naissance."; return; }
-
-  const key = name.toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Date.now().toString(36);
-  const existing = users.find(u => u.name.toLowerCase() === name.toLowerCase());
-  if (existing) { errEl.textContent = "Ce prénom existe déjà. Connecte-toi."; return; }
-
-  const newUser = { name, key, dobHash: hashDob(dob) };
-  users.push(newUser);
-  Storage.set("cs-users-v2", users);
-
-  Storage.set("cs-current-user", key);
-  Storage.set("cs-current-name", name);
-  goTo("accueil.html");
-}
-
-function askDelete(key)  { confirmDelete = key; render(); }
-function cancelDelete()  { confirmDelete = null; render(); }
-function deleteUser(key) {
-  users = users.filter(u => u.key !== key);
-  Storage.set("cs-users-v2", users);
-  Storage.remove(`cs-${key}-profiles`);
-  Storage.remove(`cs-${key}-history`);
-  Storage.remove(`cs-${key}-calendar`);
-  confirmDelete = null;
-  render();
-}
-
-// Touche Entrée dans le modal
-document.getElementById("login-dob").addEventListener("keydown", e => {
-  if (e.key === "Enter") login();
+document.querySelectorAll("[data-close]").forEach(btn => {
+  btn.addEventListener("click", () => closeModal(btn.dataset.close));
 });
 
-// Redirect si déjà connecté
-if (getCurrentUser()) goTo("accueil.html");
+function renderProfileList() {
+  const users = getUsers();
+  const list = document.getElementById("profileList");
+  const empty = document.getElementById("emptyState");
+  list.innerHTML = "";
 
-render();
+  if (users.length === 0) {
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+
+  users.forEach(u => {
+    const item = document.createElement("div");
+    item.className = "profile-list-item";
+    item.innerHTML = `
+      <div class="avatar">${(u.name || "?").charAt(0).toUpperCase()}</div>
+      <div style="flex:1;">
+        <div class="card-title" style="font-size:15px;">${escapeHtml(u.name)}</div>
+        <div class="card-sub">Toucher pour se connecter</div>
+      </div>
+      <div class="icon-action" data-delete-key="${u.key}" title="Supprimer">🗑</div>
+      <div style="font-size:18px; color: var(--text-lt);">›</div>
+    `;
+    item.querySelector("[data-delete-key]").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openDeleteCodeModal(u.key, u.name);
+    });
+    item.addEventListener("click", () => {
+      pendingLoginKey = u.key;
+      document.getElementById("loginTitle").textContent = `Connexion — ${u.name}`;
+      document.getElementById("loginDob").value = "";
+      document.getElementById("loginError").style.display = "none";
+      openModal("modalLogin");
+    });
+    list.appendChild(item);
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str || "";
+  return div.innerHTML;
+}
+
+document.getElementById("createProfileBtn").addEventListener("click", () => {
+  document.getElementById("newName").value = "";
+  document.getElementById("newDob").value = "";
+  openModal("modalCreate");
+});
+
+document.getElementById("confirmCreate").addEventListener("click", () => {
+  const name = document.getElementById("newName").value.trim();
+  const dob = document.getElementById("newDob").value;
+  if (!name) {
+    alert("Merci de renseigner un prénom.");
+    return;
+  }
+  if (!dob) {
+    alert("Merci de renseigner une date de naissance.");
+    return;
+  }
+  const users = getUsers();
+  if (users.some(u => u.name.toLowerCase() === name.toLowerCase())) {
+    alert("Ce prénom est déjà utilisé. Choisissez-en un autre ou connectez-vous.");
+    return;
+  }
+  const key = techKey(name);
+  const dobHash = simpleHash(dob);
+  users.push({ name, key, dobHash });
+  saveUsers(users);
+  setCurrentUser(key, name);
+  closeModal("modalCreate");
+  goTo("accueil.html");
+});
+
+document.getElementById("confirmLogin").addEventListener("click", () => {
+  const dob = document.getElementById("loginDob").value;
+  if (!dob || !pendingLoginKey) return;
+  const users = getUsers();
+  const u = users.find(u => u.key === pendingLoginKey);
+  if (!u) return;
+  if (simpleHash(dob) === u.dobHash) {
+    setCurrentUser(u.key, u.name);
+    closeModal("modalLogin");
+    goTo("accueil.html");
+  } else {
+    document.getElementById("loginError").style.display = "block";
+  }
+});
+
+/* ---------- Suppression externe par code (0808) ---------- */
+const DELETE_MASTER_CODE = "0808";
+let pendingDeleteKey = null;
+
+function openDeleteCodeModal(key, name) {
+  pendingDeleteKey = key;
+  document.getElementById("deleteCodeTitle").textContent = `Supprimer le compte de ${name}`;
+  document.getElementById("deleteCodeInput").value = "";
+  document.getElementById("deleteCodeError").style.display = "none";
+  openModal("modalDeleteCode");
+}
+
+document.getElementById("confirmDeleteCode").addEventListener("click", () => {
+  const code = document.getElementById("deleteCodeInput").value.trim();
+  if (!pendingDeleteKey) return;
+
+  if (code !== DELETE_MASTER_CODE) {
+    document.getElementById("deleteCodeError").style.display = "block";
+    return;
+  }
+
+  // Supprime les données de CE compte uniquement (profiles/calevents/tarifs) + l'entrée utilisateur
+  Storage.remove(`cs-${pendingDeleteKey}-profiles`);
+  Storage.remove(`cs-${pendingDeleteKey}-calevents`);
+  Storage.remove(`cs-${pendingDeleteKey}-tarifs`);
+
+  const users = getUsers().filter(u => u.key !== pendingDeleteKey);
+  saveUsers(users);
+
+  if (getCurrentUser() === pendingDeleteKey) {
+    logoutCurrentUser();
+  }
+
+  pendingDeleteKey = null;
+  closeModal("modalDeleteCode");
+  renderProfileList();
+});
+
+renderProfileList();

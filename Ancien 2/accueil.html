@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cat Sitting">
+  <meta name="theme-color" content="#E8896A">
+  <title>Cat Sitting — Accueil</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div style="flex:1">
+    <h1 style="display:flex;align-items:center;gap:8px">🐾 Cat Sitting</h1>
+    <p id="greeting"></p>
+  </div>
+  <button class="switch-btn" onclick="logout()">Changer →</button>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('home')">🏠 Accueil</button>
+  <button class="tab" onclick="goTo('calendrier.html')">📅 Calendrier</button>
+
+</div>
+
+<div class="container">
+
+  <!-- Créer une fiche -->
+  <button class="btn btn-primary" onclick="openNewFiche()"
+    style="margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:10px">
+    🐾 Créer une nouvelle fiche
+  </button>
+
+  <!-- Modal nouvelle fiche -->
+  <div class="modal-overlay hidden" id="new-fiche-modal" onclick="document.getElementById('new-fiche-modal').classList.add('hidden')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Nouvelle fiche</h3>
+      <p>Commence par le nom du propriétaire</p>
+      <input type="text" id="new-owner-input" placeholder="Ex: Marie Dupont"
+        style="width:100%;padding:11px 13px;border-radius:10px;border:2px solid var(--border);font-size:16px;outline:none;font-family:Georgia,serif;margin-bottom:12px"
+        onkeydown="if(event.key==='Enter') createFiche()">
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="createFiche()">Créer →</button>
+        <button class="btn btn-outline" onclick="document.getElementById('new-fiche-modal').classList.add('hidden')">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="stats"></div>
+
+  <!-- Gardes à venir -->
+  <div id="gardes-section"></div>
+
+  <!-- RDV Clés -->
+  <div id="cles-section"></div>
+
+  <!-- Mes animaux -->
+  <div id="animaux-section"></div>
+
+  <!-- Récap toutes prestations -->
+  <div id="recap-section"></div>
+
+</div>
+
+<script src="storage.js"></script>
+<script src="accueil.js"></script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>

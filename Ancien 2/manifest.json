@@ -1,0 +1,18 @@
+{
+  "name": "Cat Sitting",
+  "short_name": "Cat Sitting",
+  "description": "Gestion de cat sitting",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#FFF9F5",
+  "theme_color": "#E8896A",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

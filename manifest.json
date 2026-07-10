@@ -1,0 +1,11 @@
+{
+  "name": "Cat Sitting",
+  "short_name": "Cat Sitting",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "theme_color": "#E8896A",
+  "background_color": "#FFF9F5",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Cat Sitting">
+  <title>Cat Sitting — Connexion</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    .login-hero {
+      background: var(--accent);
+      padding: 48px 20px 36px;
+      text-align: center;
+    }
+    .login-hero h1 { color: white; font-size: 28px; margin-bottom: 6px; }
+    .login-hero p  { color: rgba(255,255,255,0.85); font-size: 15px; margin: 0; }
+    .login-body { padding: 30px 16px; }
+    .user-row {
+      display: flex; gap: 8px;
+      align-items: center; margin-bottom: 10px;
+    }
+    .user-btn {
+      flex: 1; padding: 16px 20px;
+      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      background: var(--card);
+      cursor: pointer; font-size: 16px;
+      font-weight: bold; color: var(--text);
+      display: flex; align-items: center;
+      gap: 14px; font-family: Georgia, serif;
+      box-shadow: var(--shadow);
+      transition: border-color 0.15s;
+    }
+    .user-btn:hover { border-color: var(--accent); }
+    .del-btn {
+      padding: 10px 12px; border-radius: 12px;
+      background: white; border: 1px solid var(--border);
+      color: var(--text-lt); cursor: pointer; font-size: 16px;
+    }
+    .del-btn:hover { border-color: var(--red); color: var(--red); }
+    .error-msg {
+      color: var(--red); font-size: 13px;
+      text-align: center; margin-top: 8px;
+      font-weight: bold; min-height: 20px;
+    }
+    .pwd-hint {
+      font-size: 12px; color: var(--text-lt);
+      margin-bottom: 10px;
+    }
+    .section-sep {
+      text-align: center; color: var(--text-lt);
+      font-size: 13px; margin: 20px 0 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-hero">
+  <h1>🐾 Cat Sitting 🐾</h1>
+  <p>Connecte-toi pour accéder à tes fiches ✨</p>
+</div>
+
+<div class="login-body">
+
+  <!-- Profils existants -->
+  <div id="users-list"></div>
+
+  <!-- Créer un nouveau compte -->
+  <div id="new-user-section">
+    <div class="card">
+      <p style="font-weight:bold;font-size:15px;color:var(--text);margin-bottom:12px" id="new-label">Créer un nouveau profil</p>
+
+      <label class="field-label">👤 Ton prénom</label>
+      <input type="text" id="new-name" placeholder="Ex: Aurélia" autocomplete="off" style="margin-bottom:10px">
+
+      <label class="field-label">🔒 Date de naissance <span style="font-weight:normal;font-size:12px;color:var(--text-lt)">(sera ton mot de passe)</span></label>
+      <p class="pwd-hint">Ex: 15/03/1995</p>
+      <input type="date" id="new-dob" style="margin-bottom:12px">
+
+      <button class="btn btn-primary" onclick="createAccount()">Créer mon profil →</button>
+      <p class="error-msg" id="new-error"></p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal connexion -->
+<div class="modal-overlay hidden" id="login-modal" onclick="">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modal-name"></h3>
+    <p>Entre ta date de naissance pour te connecter</p>
+    <input type="date" id="login-dob" style="margin-bottom:12px;width:100%;padding:11px 13px;border-radius:10px;border:2px solid var(--border);font-size:14px;outline:none">
+    <p class="error-msg" id="login-error"></p>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="login()">Se connecter</button>
+      <button class="btn btn-outline" onclick="closeLoginModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script src="storage.js"></script>
+<script src="login.js"></script>
+</body>
+</html>

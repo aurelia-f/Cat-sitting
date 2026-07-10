@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cat Sitting">
+  <meta name="theme-color" content="#E8896A">
+  <title>Cat Sitting — Calendrier</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="header">
+  <button class="header-back" onclick="goTo('accueil.html')">←</button>
+  <h1>📅 Calendrier</h1>
+</div>
+
+<div class="tabs">
+  <button class="tab" onclick="goTo('accueil.html')">🏠 Accueil</button>
+  <button class="tab active">📅 Calendrier</button>
+
+</div>
+
+<div class="container">
+
+  <!-- Navigation mois -->
+  <div class="cal-nav">
+    <button class="cal-nav-btn" id="btn-prev">‹</button>
+    <span class="cal-nav-title" id="cal-title"></span>
+    <button class="cal-nav-btn" id="btn-next">›</button>
+  </div>
+
+  <!-- Jours de la semaine -->
+  <div class="cal-days-header">
+    <div class="cal-day-name">Lu</div>
+    <div class="cal-day-name">Ma</div>
+    <div class="cal-day-name">Me</div>
+    <div class="cal-day-name">Je</div>
+    <div class="cal-day-name">Ve</div>
+    <div class="cal-day-name">Sa</div>
+    <div class="cal-day-name">Di</div>
+  </div>
+
+  <!-- Grille -->
+  <div class="cal-grid" id="cal-grid"></div>
+
+  <!-- Légende -->
+  <div class="cal-legend">
+    <div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--blue)"></span> Prestation</div>
+    <div class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--purple)"></span> Visite planifiée</div>
+    <div class="cal-legend-item"><span class="cal-legend-dot" style="background:#9B6AE8"></span> RDV clés</div>
+  </div>
+
+</div>
+
+<!-- Modal planification -->
+<div class="modal-overlay hidden" id="modal-overlay" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="modal-date"></h3>
+    <p>Planifie l'heure de visite</p>
+    <div id="modal-animals"></div>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="closeModal()">Fermer</button>
+  </div>
+</div>
+
+<script src="storage.js"></script>
+<script src="calendrier.js"></script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>

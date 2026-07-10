@@ -1,176 +1,352 @@
-// ═══════════════════════════════════
-// FICHE.JS
-// ═══════════════════════════════════
+/* ============================================
+   CAT SITTING — fiche.js
+   ============================================ */
 
-if (!getCurrentUser()) goTo("index.html");
+if (!getCurrentUser()) {
+  goTo("index.html");
+}
 
-const params   = new URLSearchParams(window.location.search);
-const isNew    = params.get("new") === "1";
-const editName = params.get("name") || "";
+const params = new URLSearchParams(window.location.search);
+const isNew = params.get("new") === "1";
+const ownerParam = params.get("owner") || "";
+let currentKey = params.get("key") || null;
 
-let ficheName = editName;
-let charForm  = {};
-let infoForm  = {};
-let prestations = [];
+let profiles = getProfiles();
+let currentProfile;
 
-const profiles = getProfiles();
-
-if (!isNew && editName) {
-  const p = profiles[editName] || {};
-  charForm  = { ...p };
-  infoForm  = { ...(p.info || {}) };
-  prestations = [...(p.prestations || [])];
-  document.getElementById("fiche-title").textContent = "Fiche — " + editName;
-  ficheName = editName;
+if (isNew) {
+  currentKey = ownerTechKey(ownerParam);
+  currentProfile = {
+    name: ownerParam,
+    info: { owner_name: ownerParam },
+    animals: [],
+    prestations: []
+  };
+} else if (currentKey && profiles[currentKey]) {
+  currentProfile = JSON.parse(JSON.stringify(profiles[currentKey]));
+  // rétrocompatibilité
+  if (!currentProfile.animals) {
+    currentProfile.animals = getSortedAnimals(currentKey);
+  }
+  if (!currentProfile.info) {
+    currentProfile.info = { owner_name: currentProfile.name || "" };
+  }
+  if (!currentProfile.prestations) {
+    currentProfile.prestations = [];
+  }
 } else {
-  ficheName = prompt("Prénom de l'animal ?");
-  if (!ficheName) goTo("accueil.html");
-  document.getElementById("fiche-title").textContent = "Fiche — " + ficheName;
+  goTo("accueil.html");
 }
 
-function switchTab(name) {
-  ["character","info","prestations"].forEach(t => {
-    document.getElementById("tab-"+t).classList.toggle("active", t===name);
-    document.getElementById("content-"+t).classList.toggle("active", t===name);
+document.getElementById("ficheTitle").textContent = currentProfile.name || "Fiche";
+document.getElementById("backBtn").addEventListener("click", () => goTo("accueil.html"));
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(`panel-${btn.dataset.tab}`).classList.add("active");
   });
+});
+
+if (isNew) {
+  document.querySelector('[data-tab="animaux"]').click();
 }
 
-// ── Helpers UI ──
-function makeSelect(id, label, icon, options) {
-  const current = charForm[id];
-  const opts = options.map(o => `
-    <button type="button" class="option${current===o?" selected":""}" onclick="setChar('${id}','${o}',this)">
-      ${current===o?"✓ ":""}${o}
-    </button>`).join("");
-  return `<div style="margin-bottom:14px">
-    <label class="field-label">${icon} ${label}</label>
-    <div class="options">${opts}</div>
-  </div>`;
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str || "";
+  return div.innerHTML;
 }
 
-function makeMulti(id, label, icon, options) {
-  const current = charForm[id] || [];
-  const tags = options.map(o => `
-    <button type="button" class="tag-btn${current.includes(o)?" selected":""}" onclick="toggleChar('${id}','${o}',this)">
-      ${current.includes(o)?"✓ ":""}${o}
-    </button>`).join("");
-  return `<div style="margin-bottom:14px">
-    <label class="field-label">${icon} ${label}</label>
-    <div class="tags">${tags}</div>
-  </div>`;
+/* ================= ANIMAUX ================= */
+
+let editingAnimalIndex = null;
+
+function sortedAnimalsLocal() {
+  return [...currentProfile.animals].sort((a, b) => (a.name || "").localeCompare(b.name || "", "fr"));
 }
 
-function makeText(id, label, icon, ph) {
-  return `<div style="margin-bottom:14px">
-    <label class="field-label">${icon} ${label}</label>
-    <input type="text" placeholder="${ph}" value="${(charForm[id]||"").replace(/"/g,"&quot;")}"
-      oninput="charForm['${id}']=this.value">
-  </div>`;
-}
-
-function makeInfoText(id, label, icon, ph) {
-  return `<div style="margin-bottom:14px">
-    <label class="field-label">${icon} ${label}</label>
-    <input type="text" placeholder="${ph}" value="${(infoForm[id]||"").replace(/"/g,"&quot;")}"
-      oninput="infoForm['${id}']=this.value">
-  </div>`;
-}
-
-// ── Render character tab ──
-function renderCharacter() {
-  document.getElementById("content-character").innerHTML = `
-    ${makeMulti("animal_type","Type d'animal","🐾",["Chat","Chien","Lapin","Autre"])}
-    ${makeSelect("animal_gender","Sexe","⚥",["Mâle","Femelle","Mixte"])}
-    ${makeSelect("animal_age","Âge","🎂",["Chaton / Jeune (- 1 an)","Adulte (1-7 ans)","Senior (+ 7 ans)"])}
-    ${makeSelect("is_cuddly","Niveau de câlins","🥰",["Très câlin(e)","Un peu câlin(e)","Pas trop câlin(e)","Indépendant(e)"])}
-    ${makeSelect("comes_to_me","Vient spontanément ?","👣",["Oui, tout le temps","Parfois","Pas vraiment","Se cache"])}
-    ${makeSelect("is_playful","Joueur/joueuse ?","🎾",["Très joueur/joueuse","Un peu","Pas vraiment","Dort beaucoup"])}
-    ${makeSelect("eats_how","Rapport à la nourriture","🍽️",["Mange tout de suite","Mange à son rythme","Difficile / capricieux","Très gourmand(e)"])}
-    ${makeMulti("personality","Personnalité","✨",["Timide","Curieux/se","Collant(e)","Dominant(e)","Peureux/se","Bavard(e)","Calme","Aventurier/ère"])}
-    ${makeMulti("favorite_things","Ce qu'il/elle adore","💕",["Les caresses sur la tête","Le ventre","Jouer avec une canne","Les jouets qui bougent","Regarder par la fenêtre","Les hauteurs","Les câlins dans les bras","Ronronner sur les genoux"])}
-    ${makeMulti("dislikes","Ce qu'il/elle n'aime pas","🚫",["Être pris(e) dans les bras","Les bruits forts","Les inconnus","Être seul(e)","Trop de câlins","Qu'on touche son ventre"])}
-    ${makeText("special_behavior","Comportement particulier","📝","Ex: miaule beaucoup...")}
-    ${makeSelect("has_litter","Litière à nettoyer ?","🪣",["Oui","Non"])}
-    ${makeSelect("has_water","Eau à changer ?","💧",["Oui","Non"])}
-    ${makeSelect("has_croquettes","Croquettes à remettre ?","🟤",["Oui","Non"])}
-    ${makeSelect("has_pate","Pâtée à donner ?","🍖",["Oui","Non"])}
-  `;
-}
-
-// ── Render info tab ──
-function renderInfo() {
-  document.getElementById("content-info").innerHTML = `
-    ${makeInfoText("owner_name","Propriétaire(s)","👤","Ex: Marie & Paul Dupont")}
-    ${makeInfoText("owner_phone","Téléphone","📞","Ex: 06 12 34 56 78")}
-    ${makeInfoText("address","Adresse","📍","Ex: 12 rue des Lilas, Paris 11e")}
-    ${makeInfoText("access_code","Code d'accès","🔑","Ex: B1234")}
-    ${makeInfoText("vet","Vétérinaire","🏥","Ex: Dr Martin, 01 23 45 67 89")}
-    ${makeInfoText("food","Nourriture / quantité","🍽️","Ex: 1 sachet matin + croquettes le soir")}
-    ${makeInfoText("health_notes","Santé / médicaments","💊","Ex: Prend un comprimé le matin dans la pâtée")}
-    ${makeInfoText("special_notes","Notes importantes","📝","Ex: Ne pas ouvrir la fenêtre du salon")}
-  `;
-}
-
-// ── Render prestations tab ──
-function renderPrestations() {
-  let html = "";
-  prestations.forEach((p, i) => {
-    const { days, total } = calcPrestation(p);
-    html += `<div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-weight:bold;font-size:14px">📅 ${fmtDate(p.date_start)} → ${fmtDate(p.date_end)}</div>
-          <div style="font-size:12px;color:var(--text-lt);margin-top:3px">
-            ${days}j ${p.mcer_nom?"· Formule "+p.mcer_nom:""}${total>0?" · "+total+"€":""}
-            ${p.payment_status ? (p.payment_status==="paye"?" ✅":" ⏳") : ""}
+function renderAnimals() {
+  const list = document.getElementById("animalsList");
+  const animals = sortedAnimalsLocal();
+  if (animals.length === 0) {
+    list.innerHTML = `<div class="empty-state">Aucun animal ajouté pour l'instant 🐾</div>`;
+    return;
+  }
+  list.innerHTML = animals.map(a => {
+    const realIdx = currentProfile.animals.indexOf(a);
+    return `
+      <div class="card">
+        <div class="card-row">
+          <div>
+            <div class="card-title">${animalEmoji(a.animal_type)} ${escapeHtml(a.name || "Sans nom")}</div>
+            <div class="card-sub">${escapeHtml(a.animal_gender || "")} ${a.animal_gender ? "·" : ""} ${escapeHtml(a.animal_age || "")} ${a.animal_age ? "·" : ""} ${escapeHtml(a.is_cuddly || "")}</div>
+          </div>
+          <div class="flex gap-8">
+            <div class="icon-action" data-edit-animal="${realIdx}">✏️</div>
+            <div class="icon-action" data-del-animal="${realIdx}">🗑</div>
           </div>
         </div>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-outline btn-small" onclick="editPrestation(${i})">✏️</button>
-          <button class="btn btn-small" style="background:white;border:1px solid var(--border);color:var(--text-lt)" onclick="deletePrestation(${i})">🗑</button>
+      </div>
+    `;
+  }).join("");
+
+  list.querySelectorAll("[data-edit-animal]").forEach(btn => {
+    btn.addEventListener("click", () => openAnimalModal(parseInt(btn.dataset.editAnimal)));
+  });
+  list.querySelectorAll("[data-del-animal]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.dataset.delAnimal);
+      if (confirm(`Supprimer ${currentProfile.animals[idx].name || "cet animal"} ?`)) {
+        currentProfile.animals.splice(idx, 1);
+        renderAnimals();
+      }
+    });
+  });
+}
+
+function clearAnimalModal() {
+  document.getElementById("a_name").value = "";
+  document.getElementById("a_special_behavior").value = "";
+  document.querySelectorAll("#modalAnimal .pill").forEach(p => p.classList.remove("selected"));
+  document.querySelectorAll("#modalAnimal .switch").forEach(s => s.classList.remove("on"));
+}
+
+function openAnimalModal(idx) {
+  editingAnimalIndex = (idx === undefined || idx === null) ? null : idx;
+  clearAnimalModal();
+  document.getElementById("animalModalTitle").textContent =
+    editingAnimalIndex === null ? "Ajouter un animal" : "Modifier l'animal";
+
+  if (editingAnimalIndex !== null) {
+    const a = currentProfile.animals[editingAnimalIndex];
+    document.getElementById("a_name").value = a.name || "";
+    document.getElementById("a_special_behavior").value = a.special_behavior || "";
+    setPillGroup("animal_type", a.animal_type || []);
+    setPillGroup("animal_gender", a.animal_gender ? [a.animal_gender] : []);
+    setPillGroup("animal_age", a.animal_age ? [a.animal_age] : []);
+    setPillGroup("is_cuddly", a.is_cuddly ? [a.is_cuddly] : []);
+    setPillGroup("comes_to_me", a.comes_to_me ? [a.comes_to_me] : []);
+    setPillGroup("is_playful", a.is_playful ? [a.is_playful] : []);
+    setPillGroup("eats_how", a.eats_how ? [a.eats_how] : []);
+    setPillGroup("personality", a.personality || []);
+    setPillGroup("favorite_things", a.favorite_things || []);
+    setPillGroup("dislikes", a.dislikes || []);
+    setToggle("has_litter", a.has_litter === "Oui");
+    setToggle("has_water", a.has_water === "Oui");
+    setToggle("has_croquettes", a.has_croquettes === "Oui");
+    setToggle("has_pate", a.has_pate === "Oui");
+  }
+
+  document.getElementById("modalAnimal").classList.add("open");
+}
+
+function setPillGroup(field, values) {
+  const group = document.querySelector(`.pill-group[data-field="${field}"]`);
+  if (!group) return;
+  group.querySelectorAll(".pill").forEach(p => {
+    p.classList.toggle("selected", values.includes(p.dataset.value));
+  });
+}
+
+function getPillGroupValue(field, multi) {
+  const group = document.querySelector(`.pill-group[data-field="${field}"]`);
+  const selected = [...group.querySelectorAll(".pill.selected")].map(p => p.dataset.value);
+  return multi ? selected : (selected[0] || "");
+}
+
+function setToggle(name, on) {
+  const el = document.querySelector(`.switch[data-toggle="${name}"]`);
+  if (el) el.classList.toggle("on", !!on);
+}
+
+function getToggle(name) {
+  const el = document.querySelector(`.switch[data-toggle="${name}"]`);
+  return el && el.classList.contains("on") ? "Oui" : "Non";
+}
+
+/* pill click behavior (single vs multi select) */
+document.querySelectorAll("#modalAnimal .pill-group").forEach(group => {
+  const isMulti = group.dataset.multi === "1";
+  group.querySelectorAll(".pill").forEach(pill => {
+    pill.addEventListener("click", () => {
+      if (isMulti) {
+        pill.classList.toggle("selected");
+      } else {
+        group.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
+        pill.classList.add("selected");
+      }
+    });
+  });
+});
+
+/* toggle switch click */
+document.querySelectorAll("#modalAnimal .switch").forEach(sw => {
+  sw.addEventListener("click", () => sw.classList.toggle("on"));
+});
+
+document.getElementById("addAnimalBtn").addEventListener("click", () => openAnimalModal(null));
+
+document.getElementById("saveAnimalBtn").addEventListener("click", () => {
+  const name = document.getElementById("a_name").value.trim();
+  if (!name) {
+    alert("Merci de renseigner le prénom de l'animal.");
+    return;
+  }
+  const animal = {
+    name,
+    animal_type: getPillGroupValue("animal_type", true),
+    animal_gender: getPillGroupValue("animal_gender", false),
+    animal_age: getPillGroupValue("animal_age", false),
+    is_cuddly: getPillGroupValue("is_cuddly", false),
+    comes_to_me: getPillGroupValue("comes_to_me", false),
+    is_playful: getPillGroupValue("is_playful", false),
+    eats_how: getPillGroupValue("eats_how", false),
+    personality: getPillGroupValue("personality", true),
+    favorite_things: getPillGroupValue("favorite_things", true),
+    dislikes: getPillGroupValue("dislikes", true),
+    special_behavior: document.getElementById("a_special_behavior").value.trim(),
+    has_litter: getToggle("has_litter"),
+    has_water: getToggle("has_water"),
+    has_croquettes: getToggle("has_croquettes"),
+    has_pate: getToggle("has_pate")
+  };
+
+  if (editingAnimalIndex !== null) {
+    currentProfile.animals[editingAnimalIndex] = animal;
+  } else {
+    currentProfile.animals.push(animal);
+  }
+  document.getElementById("modalAnimal").classList.remove("open");
+  renderAnimals();
+});
+
+/* ================= INFOS ================= */
+
+function loadInfoTab() {
+  const info = currentProfile.info || {};
+  document.getElementById("info_owner_name").value = info.owner_name || currentProfile.name || "";
+  document.getElementById("info_owner_phone").value = info.owner_phone || "";
+  document.getElementById("info_address").value = info.address || "";
+  document.getElementById("info_access_code").value = info.access_code || "";
+  document.getElementById("info_vet").value = info.vet || "";
+  document.getElementById("info_food").value = info.food || "";
+  document.getElementById("info_health_notes").value = info.health_notes || "";
+  document.getElementById("info_special_notes").value = info.special_notes || "";
+}
+
+function collectInfoTab() {
+  return {
+    owner_name: document.getElementById("info_owner_name").value.trim(),
+    owner_phone: document.getElementById("info_owner_phone").value.trim(),
+    address: document.getElementById("info_address").value.trim(),
+    access_code: document.getElementById("info_access_code").value.trim(),
+    vet: document.getElementById("info_vet").value.trim(),
+    food: document.getElementById("info_food").value.trim(),
+    health_notes: document.getElementById("info_health_notes").value.trim(),
+    special_notes: document.getElementById("info_special_notes").value.trim()
+  };
+}
+
+/* ================= PRESTATIONS ================= */
+
+function renderPrestations() {
+  const list = document.getElementById("prestationsList");
+  const prestations = currentProfile.prestations || [];
+  if (prestations.length === 0) {
+    list.innerHTML = `<div class="empty-state">Aucune prestation enregistrée</div>`;
+    return;
+  }
+  const sorted = prestations.map((p, i) => ({ p, i })).sort((a, b) => new Date(a.p.date_start) - new Date(b.p.date_start));
+
+  list.innerHTML = sorted.map(({ p, i }) => {
+    const calc = calcPrestation(p);
+    const paidBadge = p.payment_status === "paye"
+      ? `<span class="badge badge-green">Payé</span>`
+      : `<span class="badge badge-red">En attente</span>`;
+    let keyWarning = "";
+    const today = fmtISODate(new Date());
+    if (p.date_end < today && !p.keys_returned) {
+      keyWarning = `<div class="badge badge-red mt-8">⚠️ Clés non rendues</div>`;
+    }
+    return `
+      <div class="card tint-green">
+        <div class="card-row">
+          <div>
+            <div class="card-title">${fmtShort(p.date_start)} → ${fmtShort(p.date_end)}</div>
+            <div class="card-sub">${p.visit_time ? "Visites : " + escapeHtml(p.visit_time) : ""}</div>
+            <div class="card-sub">${calc.total}€ ${paidBadge}</div>
+            ${keyWarning}
+          </div>
+          <div class="flex gap-8">
+            <div class="icon-action" data-edit-pres="${i}">✏️</div>
+            <div class="icon-action" data-del-pres="${i}">🗑</div>
+          </div>
         </div>
       </div>
-    </div>`;
+    `;
+  }).join("");
+
+  list.querySelectorAll("[data-edit-pres]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      persistProfile(false);
+      goTo(`prestation.html?key=${encodeURIComponent(currentKey)}&idx=${btn.dataset.editPres}`);
+    });
   });
-  html += `<button class="btn btn-outline" onclick="goTo('prestation.html?name=${encodeURIComponent(ficheName)}&new=1')">+ Ajouter une prestation</button>`;
-  document.getElementById("content-prestations").innerHTML = html;
+  list.querySelectorAll("[data-del-pres]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.dataset.delPres);
+      if (confirm("Supprimer cette prestation ?")) {
+        currentProfile.prestations.splice(idx, 1);
+        renderPrestations();
+      }
+    });
+  });
 }
 
-function editPrestation(i) {
-  goTo(`prestation.html?name=${encodeURIComponent(ficheName)}&idx=${i}`);
-}
-function deletePrestation(i) {
-  prestations.splice(i, 1);
-  saveFicheData();
-  renderPrestations();
-}
+document.getElementById("addPrestationBtn").addEventListener("click", () => {
+  persistProfile(false);
+  goTo(`prestation.html?key=${encodeURIComponent(currentKey)}&new=1`);
+});
 
-// ── Char form helpers ──
-function setChar(id, val, btn) {
-  charForm[id] = val;
-  btn.closest(".options").querySelectorAll(".option").forEach(b => b.classList.remove("selected"));
-  btn.classList.add("selected");
-}
-function toggleChar(id, val, btn) {
-  if (!charForm[id]) charForm[id] = [];
-  if (charForm[id].includes(val)) charForm[id] = charForm[id].filter(v => v !== val);
-  else charForm[id].push(val);
-  btn.classList.toggle("selected", charForm[id].includes(val));
-}
+/* ================= SAUVEGARDE ================= */
 
-// ── Save ──
-function saveFicheData() {
-  const p = profiles[ficheName] || {};
-  profiles[ficheName] = { ...p, name: ficheName, ...charForm, info: infoForm, prestations };
+function persistProfile(showAlert) {
+  currentProfile.info = collectInfoTab();
+  currentProfile.name = currentProfile.info.owner_name || currentProfile.name || currentKey;
+  currentProfile.animals = sortedAnimalsLocal();
+
+  profiles = getProfiles();
+  profiles[currentKey] = currentProfile;
   saveProfiles(profiles);
-}
-function saveFiche() {
-  saveFicheData();
-  document.getElementById("save-status").textContent = "✓ Fiche sauvegardée !";
-  setTimeout(() => { document.getElementById("save-status").textContent = ""; goTo("accueil.html"); }, 800);
+
+  if (showAlert) {
+    document.getElementById("ficheTitle").textContent = currentProfile.name;
+  }
 }
 
-// ── Init ──
-renderCharacter();
-renderInfo();
+document.getElementById("saveBtn").addEventListener("click", () => {
+  persistProfile(true);
+  goTo("accueil.html");
+});
+
+document.getElementById("deleteFicheBtn").addEventListener("click", () => {
+  if (confirm(`Supprimer définitivement la fiche de ${currentProfile.name} ?`)) {
+    profiles = getProfiles();
+    delete profiles[currentKey];
+    saveProfiles(profiles);
+    goTo("accueil.html");
+  }
+});
+
+document.querySelectorAll("[data-close]").forEach(btn => {
+  btn.addEventListener("click", () => btn.closest(".modal-overlay").classList.remove("open"));
+});
+
+/* ---------- Init ---------- */
+loadInfoTab();
+renderAnimals();
 renderPrestations();
