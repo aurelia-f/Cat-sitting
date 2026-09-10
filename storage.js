@@ -75,19 +75,19 @@ function saveTarifs(t) {
   return Storage.set(userKey("tarifs"), t);
 }
 
-/* ---------- Tarifs MCER par défaut ---------- */
+/* ---------- Tarifs MCER (définitifs) ---------- */
 const DEFAULT_TARIFS = {
-  independant: { nom: "Indépendant", desc: "1 visite de 30 min tous les 2 jours", visites: 0.5, prix: null, parVisite: true },
+  independant: { nom: "Indépendant", desc: "1 visite de 30 min tous les 2 jours", visites: 0.5, prix: 10.5, parVisite: true },
   classique:   { nom: "Classique",   desc: "1 visite de 30 min / jour",           visites: 1,   prix: 9,    parVisite: true },
   delicat:     { nom: "Délicat",     desc: "2 visites de 30 min / jour",          visites: 2,   prix: 10,   parVisite: true },
   calin:       { nom: "Câlin",       desc: "1 visite de 1h / jour",               visites: 1,   prix: 15,   parVisite: true },
-  royal:       { nom: "Royal",       desc: "1 visite de 2h / jour",               visites: 1,   prix: null, parVisite: true },
-  nuit:        { nom: "Garde de nuit", desc: "Dort à domicile",                   visites: 1,   prix: null, parVisite: false },
-  diabetique:  { nom: "Diabétique",  desc: "2 visites + injection insuline",      visites: 2,   prix: null, parVisite: true }
+  royal:       { nom: "Royal",       desc: "1 visite de 2h / jour",               visites: 1,   prix: 25,   parVisite: true },
+  nuit:        { nom: "Garde de nuit", desc: "Dort à domicile",                   visites: 1,   prix: 30,   parVisite: false },
+  diabetique:  { nom: "Diabétique",  desc: "2 visites + injection insuline",      visites: 2,   prix: 12.5, parVisite: true }
 };
 
-/* Clés MCER pour lesquelles le rendu des clés est automatiquement 9€ */
-const AUTO_KEY_RETURN_9 = ["classique", "delicat", "calin"];
+/* La remise des clés en main propre en fin de mission compte comme une visite Classique (9€), quelle que soit la formule */
+const KEY_RETURN_IN_PERSON_PRICE = 9;
 
 /* ---------- Tri alphabétique ---------- */
 function getSortedOwners() {
@@ -168,7 +168,7 @@ function calcPrestation(p) {
     : Math.round(totalVisits * prixParVisite * 100) / 100;
 
   let keyPrice = 0;
-  if (p.key_return_type === "9") keyPrice = 9;
+  if (p.key_return_type === "9") keyPrice = KEY_RETURN_IN_PERSON_PRICE;
   else if (p.key_return_type === "0") keyPrice = 0;
   else if (p.key_return_type === "autre") keyPrice = parseFloat(p.key_return_price) || 0;
   else keyPrice = parseFloat(p.key_return_price) || 0;
@@ -354,7 +354,7 @@ function goTo(page) {
   window.location.href = page;
 }
 
-/* ---------- Hash simple pour date de naissance ---------- */
+/* ---------- Hash simple (mot de passe, etc.) ---------- */
 function simpleHash(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {

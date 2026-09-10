@@ -4,7 +4,7 @@
    Stratégie : réseau en priorité (network-first), cache en secours
    ============================================ */
 
-const CACHE_NAME = "cat-sitting-v2";
+const CACHE_NAME = "cat-sitting-v6";
 const FILES_TO_CACHE = [
   "./index.html",
   "./login.js",
@@ -16,6 +16,10 @@ const FILES_TO_CACHE = [
   "./fiche.js",
   "./prestation.html",
   "./prestation.js",
+  "./ajour.html",
+  "./ajour.js",
+  "./admin.html",
+  "./admin.js",
   "./message.html",
   "./messages.html",
   "./style.css",

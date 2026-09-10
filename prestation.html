@@ -7,6 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#E8896A">
 <link rel="apple-touch-icon" href="icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -28,24 +29,6 @@
       <input type="date" id="date_end">
       <label>Heure habituelle de visite</label>
       <input type="text" id="visit_time" placeholder="Ex : 8h30 et 18h00">
-    </div>
-  </div>
-
-  <!-- 1bis. Début/Fin matin ou après-midi (si 2 visites/jour) -->
-  <div class="section sec-blue" id="periodSection" style="display:none;">
-    <div class="section-head"><h2>🌗 Début & fin de journée</h2></div>
-    <div class="card">
-      <div class="card-sub mt-8">Cette formule prévoit 2 visites par jour. Précise le moment d'arrivée et de départ pour ajuster le nombre de visites facturées.</div>
-      <label class="mt-16">Le 1er jour, tu commences...</label>
-      <div class="pill-group" id="startPeriodGroup">
-        <div class="pill" data-period="matin">Le matin</div>
-        <div class="pill" data-period="apres-midi">L'après-midi</div>
-      </div>
-      <label class="mt-16">Le dernier jour, tu termines...</label>
-      <div class="pill-group" id="endPeriodGroup">
-        <div class="pill" data-period="matin">Le matin</div>
-        <div class="pill" data-period="apres-midi">L'après-midi</div>
-      </div>
     </div>
   </div>
 
@@ -96,8 +79,23 @@
         <label>Formule</label>
         <div class="pill-group" id="mcerPillGroup"></div>
         <div class="card-sub mt-8" id="mcerDesc"></div>
-        <label>Prix par visite (€)</label>
-        <input type="number" id="price_per_visit_mcer" step="0.5" min="0">
+        <div class="mt-8" style="font-weight:bold; color:var(--accent-dk); font-size:16px;" id="mcerPriceDisplay"></div>
+
+        <!-- Apparaît seulement si la formule choisie a 2 visites/jour (ex: Délicat) -->
+        <div id="periodSection" style="display:none;">
+          <div class="divider"></div>
+          <div class="card-sub">Cette formule prévoit 2 visites par jour. Précise le moment d'arrivée et de départ pour ajuster le nombre de visites facturées.</div>
+          <label class="mt-16">Le 1er jour, tu commences...</label>
+          <div class="pill-group" id="startPeriodGroup">
+            <div class="pill" data-period="matin">Le matin</div>
+            <div class="pill" data-period="apres-midi">L'après-midi</div>
+          </div>
+          <label class="mt-16">Le dernier jour, tu termines...</label>
+          <div class="pill-group" id="endPeriodGroup">
+            <div class="pill" data-period="matin">Le matin</div>
+            <div class="pill" data-period="apres-midi">L'après-midi</div>
+          </div>
+        </div>
       </div>
 
       <div id="manuelBlock" class="mt-16" style="display:none;">

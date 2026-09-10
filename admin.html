@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cat Sitting — Admin</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8896A">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="back-btn" id="backBtn">←</div>
+    <h1>🔐 Admin</h1>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="val" id="statUsers">0</div>
+      <div class="lbl">Comptes</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" id="statFichesTotal">0</div>
+      <div class="lbl">Fiches</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" id="statRevenueTotal">0€</div>
+      <div class="lbl">CA total</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>👥 Tous les comptes</h2></div>
+    <div id="usersList"></div>
+  </div>
+
+</div>
+
+<script src="storage.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

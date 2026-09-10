@@ -82,31 +82,31 @@ button {
   letter-spacing: 0.2px;
 }
 
-.topbar .back-btn {
+.back-btn {
   background: var(--card);
   border: 1px solid var(--border);
   color: var(--accent-dk);
   border-radius: 50%;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 20px;
   cursor: pointer;
   flex-shrink: 0;
 }
 
-.topbar .icon-btn {
+.icon-btn {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 50%;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -598,9 +598,17 @@ input:focus, select:focus, textarea:focus {
   font-weight: bold;
 }
 
+.cal-head .icon-btn {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--accent-dk);
+}
+
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(44px, auto);
+  align-items: stretch;
   gap: 4px;
 }
 
@@ -613,7 +621,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 .cal-day {
-  aspect-ratio: 1;
+  height: 100%;
+  min-height: 44px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--card);
@@ -623,13 +632,15 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible;
+  box-sizing: border-box;
 }
 
 .cal-day.empty {
   border: none;
   background: transparent;
   cursor: default;
+  min-height: 0;
 }
 
 .cal-day.today {
@@ -643,18 +654,44 @@ input:focus, select:focus, textarea:focus {
 
 .cal-day .pill-dot {
   font-size: 8px;
+  line-height: 1.5;
   border-radius: 6px;
-  padding: 1px 3px;
+  padding: 1px 4px;
   margin-top: 2px;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
 }
 
-.pill-dot.pres { background: var(--blue); }
-.pill-dot.visite { background: var(--purple); }
-.pill-dot.rdv { background: var(--accent-dk); }
+.color-swatch-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 6px 0 4px;
+}
+
+.color-swatch {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 3px solid transparent;
+  box-shadow: var(--shadow);
+}
+
+.color-swatch.selected {
+  border-color: var(--text);
+}
+
+.legend-chip {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
 
 /* utility */
 .flex { display: flex; }

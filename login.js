@@ -1,17 +1,10 @@
 /* ============================================
    CAT SITTING — login.js
-   Connexion : prénom + date de naissance (mot de passe)
+   Connexion réelle par email + mot de passe (Firebase Auth)
    ============================================ */
 
-const USERS_KEY = "cs-users-v2";
-let pendingLoginKey = null;
-
-function getUsers() {
-  return Storage.get(USERS_KEY) || [];
-}
-function saveUsers(users) {
-  Storage.set(USERS_KEY, users);
-}
+import { logIn, signUp, traduireErreurAuth } from "./auth.js";
+import { updateProfile } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
 function openModal(id) {
   document.getElementById(id).classList.add("open");
@@ -24,133 +17,97 @@ document.querySelectorAll("[data-close]").forEach(btn => {
   btn.addEventListener("click", () => closeModal(btn.dataset.close));
 });
 
-function renderProfileList() {
-  const users = getUsers();
-  const list = document.getElementById("profileList");
-  const empty = document.getElementById("emptyState");
-  list.innerHTML = "";
-
-  if (users.length === 0) {
-    empty.style.display = "block";
-    return;
-  }
-  empty.style.display = "none";
-
-  users.forEach(u => {
-    const item = document.createElement("div");
-    item.className = "profile-list-item";
-    item.innerHTML = `
-      <div class="avatar">${(u.name || "?").charAt(0).toUpperCase()}</div>
-      <div style="flex:1;">
-        <div class="card-title" style="font-size:15px;">${escapeHtml(u.name)}</div>
-        <div class="card-sub">Toucher pour se connecter</div>
-      </div>
-      <div class="icon-action" data-delete-key="${u.key}" title="Supprimer">🗑</div>
-      <div style="font-size:18px; color: var(--text-lt);">›</div>
-    `;
-    item.querySelector("[data-delete-key]").addEventListener("click", (e) => {
-      e.stopPropagation();
-      openDeleteCodeModal(u.key, u.name);
-    });
-    item.addEventListener("click", () => {
-      pendingLoginKey = u.key;
-      document.getElementById("loginTitle").textContent = `Connexion — ${u.name}`;
-      document.getElementById("loginDob").value = "";
-      document.getElementById("loginError").style.display = "none";
-      openModal("modalLogin");
-    });
-    list.appendChild(item);
-  });
+/* ---------- Toggle connexion / inscription ---------- */
+function showLogin() {
+  document.getElementById("viewLogin").style.display = "block";
+  document.getElementById("viewSignup").style.display = "none";
 }
-
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str || "";
-  return div.innerHTML;
+function showSignup() {
+  document.getElementById("viewLogin").style.display = "none";
+  document.getElementById("viewSignup").style.display = "block";
 }
-
-document.getElementById("createProfileBtn").addEventListener("click", () => {
-  document.getElementById("newName").value = "";
-  document.getElementById("newDob").value = "";
-  openModal("modalCreate");
+document.getElementById("goToSignup").addEventListener("click", (e) => {
+  e.preventDefault();
+  showSignup();
+});
+document.getElementById("goToLogin").addEventListener("click", (e) => {
+  e.preventDefault();
+  showLogin();
 });
 
-document.getElementById("confirmCreate").addEventListener("click", () => {
-  const name = document.getElementById("newName").value.trim();
-  const dob = document.getElementById("newDob").value;
-  if (!name) {
-    alert("Merci de renseigner un prénom.");
-    return;
-  }
-  if (!dob) {
-    alert("Merci de renseigner une date de naissance.");
-    return;
-  }
-  const users = getUsers();
-  if (users.some(u => u.name.toLowerCase() === name.toLowerCase())) {
-    alert("Ce prénom est déjà utilisé. Choisissez-en un autre ou connectez-vous.");
-    return;
-  }
-  const key = techKey(name);
-  const dobHash = simpleHash(dob);
-  users.push({ name, key, dobHash });
-  saveUsers(users);
-  setCurrentUser(key, name);
-  closeModal("modalCreate");
-  goTo("accueil.html");
-});
+/* ---------- Connexion ---------- */
+document.getElementById("confirmLogin").addEventListener("click", async () => {
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const errorEl = document.getElementById("loginError");
+  errorEl.style.display = "none";
 
-document.getElementById("confirmLogin").addEventListener("click", () => {
-  const dob = document.getElementById("loginDob").value;
-  if (!dob || !pendingLoginKey) return;
-  const users = getUsers();
-  const u = users.find(u => u.key === pendingLoginKey);
-  if (!u) return;
-  if (simpleHash(dob) === u.dobHash) {
-    setCurrentUser(u.key, u.name);
-    closeModal("modalLogin");
+  if (!email || !password) {
+    errorEl.textContent = "Merci de renseigner ton email et ton mot de passe.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  try {
+    const cred = await logIn(email, password);
+    const name = cred.user.displayName || email;
+    setCurrentUser(cred.user.uid, name);
     goTo("accueil.html");
-  } else {
-    document.getElementById("loginError").style.display = "block";
+  } catch (err) {
+    errorEl.textContent = traduireErreurAuth(err.code);
+    errorEl.style.display = "block";
   }
 });
 
-/* ---------- Suppression externe par code (0808) ---------- */
-const DELETE_MASTER_CODE = "0808";
-let pendingDeleteKey = null;
+/* ---------- Inscription ---------- */
+document.getElementById("confirmSignup").addEventListener("click", async () => {
+  const name = document.getElementById("newName").value.trim();
+  const email = document.getElementById("newEmail").value.trim();
+  const password = document.getElementById("newPassword").value;
+  const errorEl = document.getElementById("signupError");
+  errorEl.style.display = "none";
 
-function openDeleteCodeModal(key, name) {
-  pendingDeleteKey = key;
-  document.getElementById("deleteCodeTitle").textContent = `Supprimer le compte de ${name}`;
-  document.getElementById("deleteCodeInput").value = "";
-  document.getElementById("deleteCodeError").style.display = "none";
-  openModal("modalDeleteCode");
-}
-
-document.getElementById("confirmDeleteCode").addEventListener("click", () => {
-  const code = document.getElementById("deleteCodeInput").value.trim();
-  if (!pendingDeleteKey) return;
-
-  if (code !== DELETE_MASTER_CODE) {
-    document.getElementById("deleteCodeError").style.display = "block";
+  if (!name || !email || !password) {
+    errorEl.textContent = "Merci de remplir tous les champs.";
+    errorEl.style.display = "block";
     return;
   }
 
-  // Supprime les données de CE compte uniquement (profiles/calevents/tarifs) + l'entrée utilisateur
-  Storage.remove(`cs-${pendingDeleteKey}-profiles`);
-  Storage.remove(`cs-${pendingDeleteKey}-calevents`);
-  Storage.remove(`cs-${pendingDeleteKey}-tarifs`);
-
-  const users = getUsers().filter(u => u.key !== pendingDeleteKey);
-  saveUsers(users);
-
-  if (getCurrentUser() === pendingDeleteKey) {
-    logoutCurrentUser();
+  try {
+    const cred = await signUp(email, password);
+    await updateProfile(cred.user, { displayName: name });
+    setCurrentUser(cred.user.uid, name);
+    goTo("accueil.html");
+  } catch (err) {
+    errorEl.textContent = traduireErreurAuth(err.code);
+    errorEl.style.display = "block";
   }
-
-  pendingDeleteKey = null;
-  closeModal("modalDeleteCode");
-  renderProfileList();
 });
 
-renderProfileList();
+/* ---------- Accès admin caché (5 appuis sur la patte + code secret) ---------- */
+const ADMIN_CODE = "0808";
+let pawTapCount = 0;
+let pawTapTimer = null;
+
+document.getElementById("pawTrigger").addEventListener("click", () => {
+  pawTapCount++;
+  clearTimeout(pawTapTimer);
+  pawTapTimer = setTimeout(() => { pawTapCount = 0; }, 2500);
+  if (pawTapCount >= 5) {
+    pawTapCount = 0;
+    document.getElementById("adminCodeInput").value = "";
+    document.getElementById("adminCodeError").style.display = "none";
+    openModal("modalAdminCode");
+  }
+});
+
+document.getElementById("confirmAdminCode").addEventListener("click", () => {
+  const val = document.getElementById("adminCodeInput").value.trim();
+  if (val === ADMIN_CODE) {
+    sessionStorage.setItem("cs-admin-unlocked", "1");
+    closeModal("modalAdminCode");
+    goTo("admin.html");
+  } else {
+    document.getElementById("adminCodeError").style.display = "block";
+  }
+});

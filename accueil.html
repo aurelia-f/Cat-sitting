@@ -15,6 +15,7 @@
 
   <div class="topbar">
     <h1>🐾 Cat Sitting</h1>
+    <div class="icon-btn" id="ajourBtn" title="À jour">✅</div>
     <div class="icon-btn" id="calBtn" title="Calendrier">📅</div>
     <div class="icon-btn" id="logoutBtn" title="Déconnexion">↩︎</div>
     <div class="icon-btn" id="deleteAccountBtn" title="Supprimer mon compte" style="color:var(--red);">🗑</div>
@@ -110,10 +111,10 @@
       <h3>Supprimer mon compte</h3>
       <button class="modal-close" data-close="modalDeleteAccount">✕</button>
     </div>
-    <p class="small text-lt">Cette action est définitive : toutes tes fiches, prestations et visites planifiées seront supprimées. Confirme avec ta date de naissance.</p>
-    <label>Date de naissance</label>
-    <input type="date" id="deleteAccountDob">
-    <div class="field-hint" id="deleteAccountError" style="color:var(--red); display:none;">Date de naissance incorrecte.</div>
+    <p class="small text-lt">Cette action est définitive : toutes tes fiches, prestations et visites planifiées seront supprimées. Confirme avec ton mot de passe.</p>
+    <label>Mot de passe</label>
+    <input type="password" id="deleteAccountPassword" placeholder="Ton mot de passe">
+    <div class="field-hint" id="deleteAccountError" style="color:var(--red); display:none;">Mot de passe incorrect.</div>
     <div class="modal-actions">
       <button class="btn btn-ghost" data-close="modalDeleteAccount">Annuler</button>
       <button class="btn btn-danger" id="confirmDeleteAccount">Supprimer définitivement</button>

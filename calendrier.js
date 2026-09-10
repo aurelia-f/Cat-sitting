@@ -24,8 +24,22 @@ const ANIMAL_COLOR_PALETTE = [
   "var(--accent-dk)"
 ];
 
+function getAnimalColorOverrides() {
+  return Storage.get(userKey("animalcolors")) || {};
+}
+function saveAnimalColorOverrides(overrides) {
+  Storage.set(userKey("animalcolors"), overrides);
+}
+function animalColorKey(ownerKey, name) {
+  return `${ownerKey || ""}|${name || ""}`;
+}
+
 function getAnimalColor(ownerKey, name) {
-  const key = `${ownerKey || ""}|${name || ""}`;
+  const overrides = getAnimalColorOverrides();
+  const key = animalColorKey(ownerKey, name);
+  const val = overrides[key];
+  if (typeof val === "string" && val) return val;
+  if (typeof val === "number" && ANIMAL_COLOR_PALETTE[val]) return ANIMAL_COLOR_PALETTE[val];
   const h = Math.abs(parseInt(simpleHash(key), 36)) || 0;
   return ANIMAL_COLOR_PALETTE[h % ANIMAL_COLOR_PALETTE.length];
 }
@@ -106,24 +120,59 @@ function renderGrid() {
       }
     });
 
-    animalChips.slice(0, 2).forEach(chip => {
-      const color = getAnimalColor(chip.ownerKey, chip.name);
-      const ownerSuffix = animalChips.length > 1 ? ` · ${getOwnerName(chip.ownerKey)}` : "";
-      inner += `<div class="pill-dot" style="background-color:${color};">🐾 ${escapeHtml(chip.name)}${escapeHtml(ownerSuffix)}</div>`;
-    });
-    if (animalChips.length > 2) {
-      inner += `<div class="pill-dot" style="background-color:var(--text-lt);">+${animalChips.length - 2}</div>`;
-    }
+    // Nombre de chats par propriétaire ce jour-là (pour savoir quand préciser le nom du maître)
+    const ownerCounts = {};
+    animalChips.forEach(c => { ownerCounts[c.ownerKey] = (ownerCounts[c.ownerKey] || 0) + 1; });
 
+    // Regroupe les chats d'un même propriétaire en UNE seule puce
+    const chipsByOwner = {};
+    animalChips.forEach(c => {
+      if (!chipsByOwner[c.ownerKey]) chipsByOwner[c.ownerKey] = [];
+      chipsByOwner[c.ownerKey].push(c);
+    });
+    Object.entries(chipsByOwner).forEach(([owKey, animals]) => {
+      const color = getAnimalColor(owKey, animals[0].name);
+      let label;
+      if (animals.length >= 2) {
+        // Plusieurs chats chez la même personne : on affiche juste le nom du maître, souligné
+        label = `<u>${escapeHtml(getOwnerName(owKey))}</u>`;
+      } else {
+        label = escapeHtml(animals[0].name);
+      }
+      inner += `<div class="pill-dot" style="background-color:${color};">${label}</div>`;
+    });
+
+    // Regroupe les visites planifiées d'un même chat : si 2 visites (matin + après-midi), affiche M A
+    const visiteGroups = {};
     visites.forEach(v => {
+      const k = `${v.ownerKey}|${v.animalName}`;
+      if (!visiteGroups[k]) visiteGroups[k] = [];
+      visiteGroups[k].push(v);
+    });
+    Object.values(visiteGroups).forEach(group => {
+      group.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+      const v = group[0];
       const color = getAnimalColor(v.ownerKey, v.animalName);
-      const ownerSuffix = animalChips.length > 1 ? ` · ${getOwnerName(v.ownerKey)}` : "";
-      inner += `<div class="pill-dot" draggable="true" data-visite-id="${v.id}" style="background-color:${color};">⏰ ${escapeHtml(v.animalName)}${escapeHtml(ownerSuffix)}${v.time ? " " + v.time : ""}</div>`;
+      const ownerSuffix = ownerCounts[v.ownerKey] >= 2 ? ` · <u>${escapeHtml(getOwnerName(v.ownerKey))}</u>` : "";
+      const letters = group.length >= 2 ? ` <b>M</b> <b>A</b>` : "";
+      inner += `<div class="pill-dot" draggable="true" data-visite-id="${v.id}" style="background-color:${color};">${escapeHtml(v.animalName)}${ownerSuffix}${letters}</div>`;
     });
 
-    rdvs.slice(0, 1).forEach(r => {
-      const color = getAnimalColor(r.ownerKey, r.animalName);
-      inner += `<div class="pill-dot" style="background-color:${color};">🔑 ${r.time || ""}</div>`;
+    const rdvByOwner = {};
+    rdvs.forEach(r => {
+      if (!rdvByOwner[r.ownerKey]) rdvByOwner[r.ownerKey] = [];
+      rdvByOwner[r.ownerKey].push(r);
+    });
+    Object.entries(rdvByOwner).forEach(([owKey, group]) => {
+      const color = getAnimalColor(owKey, group[0].animalName);
+      const distinctAnimals = new Set(group.map(r => r.animalName)).size;
+      let label;
+      if (distinctAnimals >= 2) {
+        label = `<u>${escapeHtml(getOwnerName(owKey))}</u>`;
+      } else {
+        label = escapeHtml(group[0].animalName);
+      }
+      inner += `<div class="pill-dot" style="background-color:${color};">🔑 ${label}</div>`;
     });
 
     cell.innerHTML = inner;
@@ -141,6 +190,15 @@ function renderGrid() {
     });
 
     grid.appendChild(cell);
+  }
+
+  // Complète la dernière semaine avec des cases vides pour que la grille reste un rectangle net
+  const totalCells = startOffset + daysInMonth;
+  const trailingEmpty = (7 - (totalCells % 7)) % 7;
+  for (let i = 0; i < trailingEmpty; i++) {
+    const empty = document.createElement("div");
+    empty.className = "cal-day empty";
+    grid.appendChild(empty);
   }
 
   grid.querySelectorAll("[data-visite-id]").forEach(el => {
@@ -224,13 +282,23 @@ function renderDayDetail(ds) {
     `;
   });
 
+  const rdvByOwnerType = {};
   rdvs.forEach(r => {
+    const k = `${r.ownerKey}|${r.type}`;
+    if (!rdvByOwnerType[k]) rdvByOwnerType[k] = [];
+    rdvByOwnerType[k].push(r);
+  });
+  Object.values(rdvByOwnerType).forEach(group => {
+    const r = group[0];
     const color = getAnimalColor(r.ownerKey, r.animalName);
-    const ownerBit = rdvs.length > 1 ? ` · ${escapeHtml(getOwnerName(r.ownerKey))}` : "";
+    const distinctAnimals = new Set(group.map(x => x.animalName)).size;
+    const nameLabel = distinctAnimals >= 2
+      ? `<u>${escapeHtml(getOwnerName(r.ownerKey))}</u>`
+      : escapeHtml(r.animalName);
     html += `
       <div class="card tint-purple">
-        <div class="card-title" style="font-size:14px; display:flex; align-items:center; gap:6px;"><span style="width:9px; height:9px; border-radius:50%; background:${color}; display:inline-block;"></span>🔑 ${r.type === "recuperation" ? "Récupération" : "Rendu"} — ${escapeHtml(r.animalName)}</div>
-        <div class="card-sub">${r.time || ""} ${r.place ? "· " + escapeHtml(r.place) : ""}${ownerBit}</div>
+        <div class="card-title" style="font-size:14px; display:flex; align-items:center; gap:6px;"><span style="width:9px; height:9px; border-radius:50%; background:${color}; display:inline-block;"></span>🔑 ${r.type === "recuperation" ? "Récupération" : "Rendu"} — ${nameLabel}</div>
+        <div class="card-sub">${r.time || ""} ${r.place ? "· " + escapeHtml(r.place) : ""}</div>
       </div>
     `;
   });
@@ -319,21 +387,98 @@ document.getElementById("nextMonth").addEventListener("click", () => {
 function renderAnimalLegend() {
   const el = document.getElementById("animalLegend");
   const owners = getSortedOwners();
-  const chips = [];
+  const entries = [];
   owners.forEach(key => {
-    getSortedAnimals(key).forEach(a => {
-      chips.push({ ownerKey: key, name: a.name || "Sans nom" });
-    });
+    const animals = getSortedAnimals(key);
+    if (animals.length === 0) return;
+    if (animals.length >= 2) {
+      // Même famille, plusieurs chats : une seule entrée avec le nom du propriétaire, souligné
+      entries.push({ ownerKey: key, colorName: animals[0].name, label: getOwnerName(key), isOwner: true });
+    } else {
+      entries.push({ ownerKey: key, colorName: animals[0].name, label: animals[0].name, isOwner: false });
+    }
   });
-  if (chips.length === 0) {
+  if (entries.length === 0) {
     el.innerHTML = "";
     return;
   }
-  el.innerHTML = chips.map(c => {
-    const color = getAnimalColor(c.ownerKey, c.name);
-    return `<span class="small" style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; border-radius:50%; background:${color}; display:inline-block;"></span>${escapeHtml(c.name)}</span>`;
+  el.innerHTML = entries.map(e => {
+    const color = getAnimalColor(e.ownerKey, e.colorName);
+    const labelHtml = e.isOwner ? `<u>${escapeHtml(e.label)}</u>` : escapeHtml(e.label);
+    return `<span class="small legend-chip" data-legend-owner="${escapeHtml(e.ownerKey)}" data-legend-name="${escapeHtml(e.colorName)}" data-legend-label="${escapeHtml(e.label)}" style="display:inline-flex; align-items:center; gap:5px;"><span style="width:10px; height:10px; border-radius:50%; background:${color}; display:inline-block;"></span>${labelHtml}</span>`;
   }).join("");
+
+  el.querySelectorAll("[data-legend-owner]").forEach(chip => {
+    chip.addEventListener("click", () => {
+      openColorPicker(chip.dataset.legendOwner, chip.dataset.legendName, chip.dataset.legendLabel);
+    });
+  });
 }
+
+/* ---------- Sélecteur de couleur manuel ---------- */
+let pendingColorTarget = null;
+let selectedColorValue = null;
+
+function openColorPicker(ownerKey, name, displayLabel) {
+  pendingColorTarget = { ownerKey, name };
+  document.getElementById("colorPickerTitle").textContent = `Couleur de ${displayLabel || name}`;
+
+  const overrides = getAnimalColorOverrides();
+  const key = animalColorKey(ownerKey, name);
+  const currentVal = overrides[key];
+  selectedColorValue = typeof currentVal === "string" ? currentVal
+    : (typeof currentVal === "number" ? ANIMAL_COLOR_PALETTE[currentVal] : null);
+
+  const swatchGroup = document.getElementById("colorSwatchGroup");
+  swatchGroup.innerHTML = ANIMAL_COLOR_PALETTE.map((color) => `
+    <div class="color-swatch${color === selectedColorValue ? " selected" : ""}" data-color-value="${color}" style="background-color:${color};"></div>
+  `).join("");
+
+  swatchGroup.querySelectorAll(".color-swatch").forEach(sw => {
+    sw.addEventListener("click", () => {
+      swatchGroup.querySelectorAll(".color-swatch").forEach(s => s.classList.remove("selected"));
+      sw.classList.add("selected");
+      selectedColorValue = sw.dataset.colorValue;
+    });
+  });
+
+  const customInput = document.getElementById("customColorInput");
+  customInput.value = (selectedColorValue && selectedColorValue.startsWith("#")) ? selectedColorValue : "#E8896A";
+
+  document.getElementById("modalColorPicker").classList.add("open");
+}
+
+document.getElementById("customColorInput").addEventListener("input", (e) => {
+  document.querySelectorAll("#colorSwatchGroup .color-swatch").forEach(s => s.classList.remove("selected"));
+  selectedColorValue = e.target.value;
+});
+
+document.getElementById("saveColorBtn").addEventListener("click", () => {
+  if (!pendingColorTarget || !selectedColorValue) {
+    document.getElementById("modalColorPicker").classList.remove("open");
+    return;
+  }
+  const overrides = getAnimalColorOverrides();
+  const key = animalColorKey(pendingColorTarget.ownerKey, pendingColorTarget.name);
+  overrides[key] = selectedColorValue;
+  saveAnimalColorOverrides(overrides);
+  document.getElementById("modalColorPicker").classList.remove("open");
+  renderGrid();
+  renderAnimalLegend();
+  if (selectedDate) renderDayDetail(selectedDate);
+});
+
+document.getElementById("resetColorBtn").addEventListener("click", () => {
+  if (!pendingColorTarget) return;
+  const overrides = getAnimalColorOverrides();
+  const key = animalColorKey(pendingColorTarget.ownerKey, pendingColorTarget.name);
+  delete overrides[key];
+  saveAnimalColorOverrides(overrides);
+  document.getElementById("modalColorPicker").classList.remove("open");
+  renderGrid();
+  renderAnimalLegend();
+  if (selectedDate) renderDayDetail(selectedDate);
+});
 
 renderDow();
 renderGrid();

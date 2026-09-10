@@ -15,76 +15,59 @@
 <div class="app login-wrap">
 
   <div class="login-hero">
-    <div class="paw">🐾</div>
+    <div class="paw" id="pawTrigger" style="cursor:pointer;">🐾</div>
     <h1>Cat Sitting</h1>
     <p>Gérez vos gardes en toute simplicité</p>
   </div>
 
-  <div id="profileList"></div>
-
-  <div id="emptyState" class="empty-state" style="display:none;">
-    Aucun profil pour l'instant.<br>Créez le vôtre pour commencer 🐾
+  <!-- Vue : connexion -->
+  <div id="viewLogin">
+    <label>Email</label>
+    <input type="email" id="loginEmail" placeholder="ton@email.com" autocomplete="username">
+    <label>Mot de passe</label>
+    <input type="password" id="loginPassword" placeholder="Ton mot de passe" autocomplete="current-password">
+    <div class="field-hint" id="loginError" style="color:var(--red); display:none;"></div>
+    <button class="btn btn-primary mt-16" id="confirmLogin">Se connecter</button>
+    <p class="small text-lt mt-16" style="text-align:center;">
+      Pas encore de compte ? <a href="#" id="goToSignup">Créer un compte</a>
+    </p>
   </div>
 
-  <button class="btn btn-primary mt-16" id="createProfileBtn">+ Créer mon profil</button>
-
-</div>
-
-<!-- Modal : créer un profil -->
-<div class="modal-overlay" id="modalCreate">
-  <div class="modal">
-    <div class="modal-head">
-      <h3>Nouveau profil</h3>
-      <button class="modal-close" data-close="modalCreate">✕</button>
-    </div>
+  <!-- Vue : inscription -->
+  <div id="viewSignup" style="display:none;">
     <label>Prénom</label>
-    <input type="text" id="newName" placeholder="Ex : Aurélia">
-    <label>Date de naissance</label>
-    <input type="date" id="newDob">
-    <div class="field-hint">Votre date de naissance sert de mot de passe. Elle n'est jamais stockée en clair.</div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" data-close="modalCreate">Annuler</button>
-      <button class="btn btn-primary" id="confirmCreate">Créer</button>
-    </div>
+    <input type="text" id="newName" placeholder="Ex : Aurélia" autocomplete="name">
+    <label>Email</label>
+    <input type="email" id="newEmail" placeholder="ton@email.com" autocomplete="username">
+    <label>Mot de passe</label>
+    <input type="password" id="newPassword" placeholder="Choisis un mot de passe (6 caractères min.)" autocomplete="new-password">
+    <div class="field-hint" id="signupError" style="color:var(--red); display:none;"></div>
+    <button class="btn btn-primary mt-16" id="confirmSignup">Créer mon compte</button>
+    <p class="small text-lt mt-16" style="text-align:center;">
+      Déjà un compte ? <a href="#" id="goToLogin">Se connecter</a>
+    </p>
   </div>
+
 </div>
 
-<!-- Modal : connexion par DDN -->
-<div class="modal-overlay" id="modalLogin">
+<!-- Modal : accès admin (code secret) -->
+<div class="modal-overlay" id="modalAdminCode">
   <div class="modal">
     <div class="modal-head">
-      <h3 id="loginTitle">Connexion</h3>
-      <button class="modal-close" data-close="modalLogin">✕</button>
+      <h3>Accès admin</h3>
+      <button class="modal-close" data-close="modalAdminCode">✕</button>
     </div>
-    <label>Date de naissance</label>
-    <input type="date" id="loginDob">
-    <div class="field-hint" id="loginError" style="color:var(--red); display:none;">Date de naissance incorrecte.</div>
+    <label>Code secret</label>
+    <input type="text" id="adminCodeInput" inputmode="numeric" maxlength="4" placeholder="••••">
+    <div class="field-hint" id="adminCodeError" style="color:var(--red); display:none;">Code incorrect.</div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" data-close="modalLogin">Annuler</button>
-      <button class="btn btn-primary" id="confirmLogin">Se connecter</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal : suppression externe par code -->
-<div class="modal-overlay" id="modalDeleteCode">
-  <div class="modal">
-    <div class="modal-head">
-      <h3 id="deleteCodeTitle">Supprimer ce compte</h3>
-      <button class="modal-close" data-close="modalDeleteCode">✕</button>
-    </div>
-    <p class="small text-lt">Cette action est définitive. Saisis le code à 4 chiffres pour confirmer la suppression.</p>
-    <label>Code à 4 chiffres</label>
-    <input type="text" id="deleteCodeInput" inputmode="numeric" maxlength="4" placeholder="••••">
-    <div class="field-hint" id="deleteCodeError" style="color:var(--red); display:none;">Code incorrect.</div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" data-close="modalDeleteCode">Annuler</button>
-      <button class="btn btn-danger" id="confirmDeleteCode">Supprimer définitivement</button>
+      <button class="btn btn-ghost" data-close="modalAdminCode">Annuler</button>
+      <button class="btn btn-primary" id="confirmAdminCode">Valider</button>
     </div>
   </div>
 </div>
 
 <script src="storage.js"></script>
-<script src="login.js"></script>
+<script type="module" src="login.js"></script>
 </body>
 </html>

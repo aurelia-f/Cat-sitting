@@ -36,26 +36,27 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
 });
 
 document.getElementById("calBtn").addEventListener("click", () => goTo("calendrier.html"));
+document.getElementById("ajourBtn").addEventListener("click", () => goTo("ajour.html"));
 
 /* ---------- Suppression du compte (uniquement par la personne connectée) ---------- */
 const USERS_KEY = "cs-users-v2";
 
 document.getElementById("deleteAccountBtn").addEventListener("click", () => {
-  document.getElementById("deleteAccountDob").value = "";
+  document.getElementById("deleteAccountPassword").value = "";
   document.getElementById("deleteAccountError").style.display = "none";
   document.getElementById("modalDeleteAccount").classList.add("open");
 });
 
 document.getElementById("confirmDeleteAccount").addEventListener("click", () => {
-  const dob = document.getElementById("deleteAccountDob").value;
+  const password = document.getElementById("deleteAccountPassword").value;
   const currentKey = getCurrentUser();
-  if (!dob || !currentKey) return;
+  if (!password || !currentKey) return;
 
   const users = Storage.get(USERS_KEY) || [];
   const me = users.find(u => u.key === currentKey);
   if (!me) return;
 
-  if (simpleHash(dob) !== me.dobHash) {
+  if (simpleHash(password) !== me.passwordHash) {
     document.getElementById("deleteAccountError").style.display = "block";
     return;
   }
@@ -160,17 +161,23 @@ function render() {
   if (clesARegler.length > 0) {
     secCles.style.display = "block";
     document.getElementById("countCles").textContent = clesARegler.length;
-    document.getElementById("listCles").innerHTML = clesARegler.map(p => `
+    document.getElementById("listCles").innerHTML = clesARegler.map(p => {
+      const animals = getSortedAnimals(p.ownerKey);
+      const nameLabel = animals.length >= 2
+        ? `<u>${escapeHtml((getProfiles()[p.ownerKey] || {}).name || p.ownerKey)}</u>`
+        : escapeHtml(p.animalName);
+      return `
       <div class="card tint-red">
         <div class="card-row">
           <div>
-            <div class="card-title">${animalEmoji(p.animalTypes)} ${escapeHtml(p.animalName)}</div>
+            <div class="card-title">${animalEmoji(p.animalTypes)} ${nameLabel}</div>
             <div class="card-sub">Garde terminée le ${fmtShort(p.date_end)} · clés non rendues</div>
           </div>
           <div class="icon-action" onclick="goTo('fiche.html?key=${encodeURIComponent(p.ownerKey)}')">›</div>
         </div>
       </div>
-    `).join("");
+    `;
+    }).join("");
   } else {
     secCles.style.display = "none";
   }
@@ -179,17 +186,23 @@ function render() {
   document.getElementById("countRdv").textContent = rdvs.length;
   const listRdv = document.getElementById("listRdv");
   listRdv.innerHTML = rdvs.length
-    ? rdvs.map(r => `
+    ? rdvs.map(r => {
+        const animals = getSortedAnimals(r.ownerKey);
+        const nameLabel = animals.length >= 2
+          ? `<u>${escapeHtml((getProfiles()[r.ownerKey] || {}).name || r.ownerKey)}</u>`
+          : escapeHtml(r.animalName);
+        return `
       <div class="card tint-purple">
         <div class="card-row">
           <div>
-            <div class="card-title">${r.type === "recuperation" ? "🔑 Récupération" : "🔑 Rendu"} — ${escapeHtml(r.animalName)}</div>
+            <div class="card-title">${r.type === "recuperation" ? "🔑 Récupération" : "🔑 Rendu"} — ${nameLabel}</div>
             <div class="card-sub">${fmtDate(r.date)} ${r.time ? "à " + r.time : ""} ${r.place ? "· " + escapeHtml(r.place) : ""}</div>
           </div>
           <div class="icon-action" onclick="goTo('fiche.html?key=${encodeURIComponent(r.ownerKey)}')">›</div>
         </div>
       </div>
-    `).join("")
+    `;
+      }).join("")
     : `<div class="empty-state">Aucun RDV clés à venir</div>`;
 
   // Mes fiches

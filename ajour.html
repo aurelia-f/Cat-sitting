@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cat Sitting — À jour</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8896A">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="back-btn" id="backBtn">←</div>
+    <h1>✅ À jour</h1>
+  </div>
+
+  <div class="card-sub mt-8" style="margin-bottom:16px;">
+    Tout ce qui n'est pas encore réglé : paiements en attente et clés pas encore rendues. Coche ✓ dès que c'est fait.
+  </div>
+
+  <div id="pendingList"></div>
+
+</div>
+
+<script src="storage.js"></script>
+<script src="ajour.js"></script>
+</body>
+</html>

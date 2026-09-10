@@ -82,7 +82,7 @@ mcerGroup.querySelectorAll(".pill").forEach(pill => {
     selectedMcerKey = pill.dataset.mcerKey;
     const t = DEFAULT_TARIFS[selectedMcerKey];
     document.getElementById("mcerDesc").textContent = t.desc;
-    document.getElementById("price_per_visit_mcer").value = t.prix != null ? t.prix : "";
+    document.getElementById("mcerPriceDisplay").textContent = `${t.prix}€/visite`;
     refreshPeriodSection();
   });
 });
@@ -162,7 +162,7 @@ paymentModeGroup.querySelectorAll(".pill").forEach(pill => {
 });
 
 /* ---------- Recalc on date/price change ---------- */
-["date_start", "date_end", "price_per_visit_mcer", "mcer_visites", "price_per_visit_manuel", "key_return_price_autre"]
+["date_start", "date_end", "mcer_visites", "price_per_visit_manuel", "key_return_price_autre"]
   .forEach(id => {
     document.getElementById(id).addEventListener("input", updateRecap);
   });
@@ -196,9 +196,10 @@ function buildPrestationObject() {
     p.mcer_nom = t.nom || "";
     p.mcer_visites = t.visites || 1;
     p.mcer_par_visite = t.parVisite !== false;
-    p.price_per_visit = parseFloat(document.getElementById("price_per_visit_mcer").value) || 0;
-    p.key_return_type = AUTO_KEY_RETURN_9.includes(selectedMcerKey) ? "9" : "0";
-    p.key_return_price = p.key_return_type === "9" ? "9" : "0";
+    p.price_per_visit = t.prix || 0;
+    // La remise des clés en main propre en fin de mission compte comme une visite Classique (9€)
+    p.key_return_type = "9";
+    p.key_return_price = "9";
   } else {
     p.mcer_key = null;
     p.mcer_nom = "Manuel";
@@ -286,8 +287,8 @@ function loadExisting() {
       mcerGroup.querySelectorAll(".pill").forEach(p => p.classList.remove("selected"));
       pill.classList.add("selected");
       document.getElementById("mcerDesc").textContent = DEFAULT_TARIFS[selectedMcerKey].desc;
+      document.getElementById("mcerPriceDisplay").textContent = `${DEFAULT_TARIFS[selectedMcerKey].prix}€/visite`;
     }
-    document.getElementById("price_per_visit_mcer").value = prestation.price_per_visit != null ? prestation.price_per_visit : "";
   } else {
     document.getElementById("mcer_visites").value = prestation.mcer_visites || 1;
     document.getElementById("price_per_visit_manuel").value = prestation.price_per_visit || "";
