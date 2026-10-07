@@ -2,6 +2,7 @@
    CAT SITTING — prestation.js
    ============================================ */
 
+await window.hydrateFromSupabase();
 if (!getCurrentUser()) {
   goTo("index.html");
 }
@@ -86,6 +87,26 @@ mcerGroup.querySelectorAll(".pill").forEach(pill => {
     refreshPeriodSection();
   });
 });
+
+document.getElementById("editPriceBtn").addEventListener("click", () => {
+  const block = document.getElementById("priceOverrideBlock");
+  const isOpen = block.style.display !== "none";
+  block.style.display = isOpen ? "none" : "block";
+  const input = document.getElementById("p_price_override");
+  if (!isOpen && !input.value) {
+    const currentTotal = calcPrestation(buildPrestationObject()).total;
+    input.value = currentTotal || "";
+  }
+  updateRecap();
+});
+
+document.getElementById("resetPriceBtn").addEventListener("click", () => {
+  document.getElementById("p_price_override").value = "";
+  document.getElementById("priceOverrideBlock").style.display = "none";
+  updateRecap();
+});
+
+document.getElementById("p_price_override").addEventListener("input", updateRecap);
 
 /* ---------- Rendu des clés (mode manuel) ---------- */
 const keyReturnGroup = document.getElementById("keyReturnPillGroup");
@@ -222,12 +243,21 @@ function buildPrestationObject() {
   const endPill = endPeriodGroup.querySelector(".pill.selected");
   p.end_period = endPill ? endPill.dataset.period : "apres-midi";
 
+  const overrideBlock = document.getElementById("priceOverrideBlock");
+  const overrideInput = document.getElementById("p_price_override");
+  p.price_override = (overrideBlock.style.display !== "none" && overrideInput.value !== "")
+    ? parseFloat(overrideInput.value)
+    : null;
+
   return p;
 }
 
 function updateRecap() {
   const p = buildPrestationObject();
   const calc = calcPrestation(p);
+
+  const totalDisplay = document.getElementById("totalPriceDisplay");
+  if (totalDisplay) totalDisplay.textContent = `${calc.total}€`;
 
   const recapSection = document.getElementById("recapSection");
   const paymentSection = document.getElementById("paymentSection");
@@ -289,6 +319,13 @@ function loadExisting() {
       document.getElementById("mcerDesc").textContent = DEFAULT_TARIFS[selectedMcerKey].desc;
       document.getElementById("mcerPriceDisplay").textContent = `${DEFAULT_TARIFS[selectedMcerKey].prix}€/visite`;
     }
+    if (prestation.price_override != null) {
+      document.getElementById("priceOverrideBlock").style.display = "block";
+      document.getElementById("p_price_override").value = prestation.price_override;
+    } else {
+      document.getElementById("priceOverrideBlock").style.display = "none";
+      document.getElementById("p_price_override").value = "";
+    }
   } else {
     document.getElementById("mcer_visites").value = prestation.mcer_visites || 1;
     document.getElementById("price_per_visit_manuel").value = prestation.price_per_visit || "";
@@ -330,7 +367,7 @@ function loadExisting() {
 loadExisting();
 
 /* ---------- Save ---------- */
-document.getElementById("saveBtn").addEventListener("click", () => {
+document.getElementById("saveBtn").addEventListener("click", async () => {
   const dateStart = document.getElementById("date_start").value;
   const dateEnd = document.getElementById("date_end").value;
   if (!dateStart || !dateEnd) {
@@ -357,5 +394,6 @@ document.getElementById("saveBtn").addEventListener("click", () => {
   profiles[ownerKey] = profile;
   saveProfiles(profiles);
 
+  await window.flushCloudSync();
   goTo(`fiche.html?key=${encodeURIComponent(ownerKey)}`);
 });

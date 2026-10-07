@@ -286,6 +286,7 @@ input[type="date"],
 input[type="time"],
 input[type="number"],
 input[type="password"],
+input[type="email"],
 select,
 textarea {
   width: 100%;
@@ -623,6 +624,7 @@ input:focus, select:focus, textarea:focus {
 .cal-day {
   height: 100%;
   min-height: 44px;
+  min-width: 0;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--card);
@@ -663,6 +665,9 @@ input:focus, select:focus, textarea:focus {
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .color-swatch-group {

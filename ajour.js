@@ -3,6 +3,7 @@
    Rattrapage : paiements en attente + clés non rendues
    ============================================ */
 
+await window.hydrateFromSupabase();
 if (!getCurrentUser()) {
   goTo("index.html");
 }

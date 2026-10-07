@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cat Sitting — Budget</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8896A">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="back-btn" id="backBtn">←</div>
+    <h1>💶 Budget</h1>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="val" id="bTotal">0€</div>
+      <div class="lbl">Total</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" id="bMonthTotal">0€</div>
+      <div class="lbl" id="bMonthLabel">Ce mois-ci</div>
+    </div>
+    <div class="stat-box">
+      <div class="val" id="bAvg">0€</div>
+      <div class="lbl">Moyenne/mission</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="mois">📅 Par mois</button>
+    <button class="tab-btn" data-tab="client">👤 Par client</button>
+    <button class="tab-btn" data-tab="formule">💶 Par formule</button>
+  </div>
+
+  <div class="tab-panel active" id="panel-mois"></div>
+  <div class="tab-panel" id="panel-client"></div>
+  <div class="tab-panel" id="panel-formule"></div>
+
+</div>
+
+<script src="storage.js"></script>
+<script type="module" src="cloudsync.js"></script>
+<script type="module" src="budget.js"></script>
+</body>
+</html>

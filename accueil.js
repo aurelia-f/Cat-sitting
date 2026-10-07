@@ -19,57 +19,42 @@ if (typeof getSortedAnimals !== "function") {
     if (p.animals && p.animals.length > 0) {
       return [...p.animals].sort((a, b) => (a.name || "").localeCompare(b.name || "", "fr"));
     }
-    return p.name ? [{ name: p.name, animal_type: p.animal_type || [] }] : [];
+    return p.animals === undefined && p.name ? [{ name: p.name, animal_type: p.animal_type || [] }] : [];
   };
 }
 
 /* Redirection si non connecté */
+await window.hydrateFromSupabase();
 if (!getCurrentUser()) {
   goTo("index.html");
 }
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
+document.getElementById("logoutBtn").addEventListener("click", async () => {
   if (confirm("Se déconnecter ?")) {
-    logoutCurrentUser();
+    await window.logOutSupabase();
     goTo("index.html");
   }
 });
 
 document.getElementById("calBtn").addEventListener("click", () => goTo("calendrier.html"));
 document.getElementById("ajourBtn").addEventListener("click", () => goTo("ajour.html"));
+document.getElementById("statTotalBox").addEventListener("click", () => goTo("budget.html"));
 
-/* ---------- Suppression du compte (uniquement par la personne connectée) ---------- */
-const USERS_KEY = "cs-users-v2";
-
+/* ---------- Effacer mes données (le compte de connexion lui-même reste actif) ---------- */
 document.getElementById("deleteAccountBtn").addEventListener("click", () => {
-  document.getElementById("deleteAccountPassword").value = "";
-  document.getElementById("deleteAccountError").style.display = "none";
   document.getElementById("modalDeleteAccount").classList.add("open");
 });
 
-document.getElementById("confirmDeleteAccount").addEventListener("click", () => {
-  const password = document.getElementById("deleteAccountPassword").value;
+document.getElementById("confirmDeleteAccount").addEventListener("click", async () => {
   const currentKey = getCurrentUser();
-  if (!password || !currentKey) return;
+  if (!currentKey) return;
 
-  const users = Storage.get(USERS_KEY) || [];
-  const me = users.find(u => u.key === currentKey);
-  if (!me) return;
+  // Vide les fiches/prestations dans Supabase (le compte de connexion, lui, reste actif)
+  saveProfiles({});
+  saveCalEvents({});
+  saveTarifs({});
 
-  if (simpleHash(password) !== me.passwordHash) {
-    document.getElementById("deleteAccountError").style.display = "block";
-    return;
-  }
-
-  // Supprime toutes les données de CET utilisateur uniquement
-  Storage.remove(userKey("profiles"));
-  Storage.remove(userKey("calevents"));
-  Storage.remove(userKey("tarifs"));
-
-  const updatedUsers = users.filter(u => u.key !== currentKey);
-  Storage.set(USERS_KEY, updatedUsers);
-
-  logoutCurrentUser();
+  await window.logOutSupabase();
   goTo("index.html");
 });
 
@@ -77,6 +62,9 @@ document.getElementById("newProfileBtn").addEventListener("click", () => {
   document.getElementById("ownerNameInput").value = "";
   document.getElementById("modalNewFiche").classList.add("open");
 });
+document.getElementById("importMissionBtn").addEventListener("click", () => goTo("import.html"));
+document.getElementById("mapClientsBtn").addEventListener("click", () => goTo("map-clients.html"));
+document.getElementById("itineraireBtn").addEventListener("click", () => goTo("itineraire.html"));
 
 document.querySelectorAll("[data-close]").forEach(btn => {
   btn.addEventListener("click", () => btn.closest(".modal-overlay").classList.remove("open"));

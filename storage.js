@@ -58,21 +58,42 @@ function getProfiles() {
   return Storage.get(userKey("profiles")) || {};
 }
 function saveProfiles(p) {
-  return Storage.set(userKey("profiles"), p);
+  const ok = Storage.set(userKey("profiles"), p);
+  if (window.queueCloudSync) window.queueCloudSync();
+  return ok;
 }
 
 function getCalEvents() {
   return Storage.get(userKey("calevents")) || {};
 }
 function saveCalEvents(c) {
-  return Storage.set(userKey("calevents"), c);
+  const ok = Storage.set(userKey("calevents"), c);
+  if (window.queueCloudSync) window.queueCloudSync();
+  return ok;
 }
 
 function getTarifs() {
   return Storage.get(userKey("tarifs")) || DEFAULT_TARIFS;
 }
 function saveTarifs(t) {
-  return Storage.set(userKey("tarifs"), t);
+  const ok = Storage.set(userKey("tarifs"), t);
+  if (window.queueCloudSync) window.queueCloudSync();
+  return ok;
+}
+
+/* ---------- Préférences d'itinéraire ---------- */
+const DEFAULT_PREFS = {
+  duration_pref: "no_pref",     // "1h_first" | "30min_first" | "no_pref"
+  difficulty_pref: "no_pref",   // "delicat_first" | "delicat_last" | "no_pref"
+  preferred_start_time: "09:00"
+};
+function getPrefs() {
+  return Object.assign({}, DEFAULT_PREFS, Storage.get(userKey("prefs")) || {});
+}
+function savePrefs(p) {
+  const ok = Storage.set(userKey("prefs"), p);
+  if (window.queueCloudSync) window.queueCloudSync();
+  return ok;
 }
 
 /* ---------- Tarifs MCER (définitifs) ---------- */
@@ -106,8 +127,9 @@ function getSortedAnimals(key) {
   if (p.animals && p.animals.length > 0) {
     return [...p.animals].sort((a, b) => (a.name || "").localeCompare(b.name || "", "fr"));
   }
-  // rétrocompatibilité : ancien format (fiche par animal)
-  if (p.name) {
+  // rétrocompatibilité : UNIQUEMENT les fiches de l'ancien format, qui n'avaient
+  // pas du tout de tableau `animals` (pas les fiches actuelles juste vides)
+  if (p.animals === undefined && p.name) {
     return [{
       name: p.name,
       animal_type: p.animal_type || [],
@@ -173,7 +195,12 @@ function calcPrestation(p) {
   else if (p.key_return_type === "autre") keyPrice = parseFloat(p.key_return_price) || 0;
   else keyPrice = parseFloat(p.key_return_price) || 0;
 
-  const total = Math.round((basePrice + keyPrice) * 100) / 100;
+  let total = Math.round((basePrice + keyPrice) * 100) / 100;
+
+  // Prix fixé manuellement (ex : montant exact annoncé dans un mail de mission importé)
+  if (p.price_override != null && p.price_override !== "") {
+    total = Math.round(parseFloat(p.price_override) * 100) / 100;
+  }
 
   return { days, totalVisits, basePrice, keyPrice, total };
 }
@@ -376,6 +403,102 @@ function ownerTechKey(ownerName) {
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   return `${clean}-${Date.now().toString(36)}`;
+}
+
+/* ---------- Reconnaissance d'un client déjà enregistré (import de mail de mission) ---------- */
+function normalizePhone(phone) {
+  return (phone || "").replace(/[^\d]/g, "");
+}
+function normalizeText(str) {
+  return (str || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+function findMatchingOwner(criteria) {
+  const profiles = getProfiles();
+  const entries = Object.entries(profiles);
+
+  if (criteria.email) {
+    const e = normalizeText(criteria.email);
+    if (e) {
+      const hit = entries.find(([, p]) => normalizeText((p.info || {}).owner_email) === e);
+      if (hit) return { key: hit[0], profile: hit[1], matchType: "email" };
+    }
+  }
+  if (criteria.phone) {
+    const ph = normalizePhone(criteria.phone);
+    if (ph) {
+      const hit = entries.find(([, p]) => normalizePhone((p.info || {}).owner_phone) === ph);
+      if (hit) return { key: hit[0], profile: hit[1], matchType: "téléphone" };
+    }
+  }
+  if (criteria.name) {
+    const n = normalizeText(criteria.name);
+    if (n) {
+      const hit = entries.find(([, p]) => normalizeText(p.name) === n);
+      if (hit) return { key: hit[0], profile: hit[1], matchType: "nom" };
+    }
+  }
+  return null;
+}
+
+/* ---------- Géocodage des adresses (Nominatim / OpenStreetMap, gratuit) ----------
+   Limite d'usage : ~1 requête/seconde max, usage personnel/léger uniquement.
+   On met en cache lat/lng sur la fiche elle-même pour ne géocoder qu'une fois. */
+async function geocodeAddress(address) {
+  if (!address || !address.trim()) return null;
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
+    const res = await fetch(url, { headers: { "Accept-Language": "fr" } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && data[0]) {
+      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    }
+  } catch (e) {
+    console.error("Erreur de géocodage :", e);
+  }
+  return null;
+}
+
+// S'assure que la fiche a des coordonnées GPS à jour pour son adresse actuelle.
+// Ne géocode que si l'adresse a changé depuis le dernier géocodage (économise les requêtes).
+async function ensureGeocoded(ownerKey) {
+  const profiles = getProfiles();
+  const p = profiles[ownerKey];
+  if (!p || !p.info || !p.info.address) return null;
+
+  if (p.info.geocoded_lat != null && p.info.geocoded_address === p.info.address) {
+    return { lat: p.info.geocoded_lat, lng: p.info.geocoded_lng };
+  }
+
+  const coords = await geocodeAddress(p.info.address);
+  if (coords) {
+    p.info.geocoded_lat = coords.lat;
+    p.info.geocoded_lng = coords.lng;
+    p.info.geocoded_address = p.info.address;
+    profiles[ownerKey] = p;
+    saveProfiles(profiles);
+  }
+  return coords;
+}
+
+// Enregistre des coordonnées choisies manuellement (correction d'une adresse mal localisée,
+// ou déplacement d'un point sur la carte)
+function setManualCoords(ownerKey, lat, lng) {
+  const profiles = getProfiles();
+  const p = profiles[ownerKey];
+  if (!p || !p.info) return;
+  p.info.geocoded_lat = lat;
+  p.info.geocoded_lng = lng;
+  p.info.geocoded_address = p.info.address;
+  profiles[ownerKey] = p;
+  saveProfiles(profiles);
+}
+
+/* ---------- Prénom seul (première partie d'un nom complet) ---------- */
+function firstName(fullName) {
+  if (!fullName) return "";
+  return fullName.trim().split(/\s+/)[0];
 }
 
 /* ---------- Enregistrement du service worker (PWA) ---------- */

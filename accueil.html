@@ -18,15 +18,20 @@
     <div class="icon-btn" id="ajourBtn" title="À jour">✅</div>
     <div class="icon-btn" id="calBtn" title="Calendrier">📅</div>
     <div class="icon-btn" id="logoutBtn" title="Déconnexion">↩︎</div>
-    <div class="icon-btn" id="deleteAccountBtn" title="Supprimer mon compte" style="color:var(--red);">🗑</div>
+    <div class="icon-btn" id="deleteAccountBtn" title="Effacer mes données" style="color:var(--red);">🗑</div>
   </div>
 
-  <button class="btn btn-primary" id="newProfileBtn" style="margin-bottom:20px;">🐾 Créer une nouvelle fiche</button>
+  <button class="btn btn-primary" id="newProfileBtn" style="margin-bottom:10px;">🐾 Créer une nouvelle fiche</button>
+  <button class="btn btn-outline" id="importMissionBtn" style="margin-bottom:10px;">📩 Importer un mail de mission</button>
+  <div class="flex gap-8" style="margin-bottom:20px;">
+    <button class="btn btn-secondary" id="mapClientsBtn" style="flex:1;">🗺️ Carte des clients</button>
+    <button class="btn btn-secondary" id="itineraireBtn" style="flex:1;">🧭 Itinéraire du jour</button>
+  </div>
 
   <div class="stats-row">
-    <div class="stat-box">
+    <div class="stat-box" id="statTotalBox" style="cursor:pointer;">
       <div class="val" id="statTotal">0€</div>
-      <div class="lbl">Total</div>
+      <div class="lbl">Total ›</div>
     </div>
     <div class="stat-box">
       <div class="val" id="statAvenir">0</div>
@@ -108,21 +113,20 @@
 <div class="modal-overlay" id="modalDeleteAccount">
   <div class="modal">
     <div class="modal-head">
-      <h3>Supprimer mon compte</h3>
+      <h3>Effacer mes données</h3>
       <button class="modal-close" data-close="modalDeleteAccount">✕</button>
     </div>
-    <p class="small text-lt">Cette action est définitive : toutes tes fiches, prestations et visites planifiées seront supprimées. Confirme avec ton mot de passe.</p>
-    <label>Mot de passe</label>
-    <input type="password" id="deleteAccountPassword" placeholder="Ton mot de passe">
-    <div class="field-hint" id="deleteAccountError" style="color:var(--red); display:none;">Mot de passe incorrect.</div>
+    <p class="small text-lt">Cette action est définitive : toutes tes fiches, prestations et visites planifiées seront supprimées (en ligne et sur cet appareil). Ton compte de connexion (email/mot de passe), lui, reste actif — tu seras déconnecté(e) et pourras te reconnecter avec un espace vide.</p>
     <div class="modal-actions">
       <button class="btn btn-ghost" data-close="modalDeleteAccount">Annuler</button>
-      <button class="btn btn-danger" id="confirmDeleteAccount">Supprimer définitivement</button>
+      <button class="btn btn-danger" id="confirmDeleteAccount">Effacer définitivement</button>
     </div>
   </div>
+
 </div>
 
 <script src="storage.js"></script>
-<script src="accueil.js"></script>
+<script type="module" src="cloudsync.js"></script>
+<script type="module" src="accueil.js"></script>
 </body>
 </html>

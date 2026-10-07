@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cat Sitting — Carte des clients</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8896A">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  #map { width: 100%; height: 60vh; border-radius: var(--radius-m); border: 1px solid var(--border); }
+  .leaflet-popup-content { font-family: Georgia, serif; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="back-btn" id="backBtn">←</div>
+    <h1>🗺️ Carte des clients</h1>
+  </div>
+
+  <div id="mapStatus" class="empty-state" style="margin-bottom:12px;">Localisation des adresses en cours…</div>
+  <div id="map" style="display:none;"></div>
+
+  <div id="unlocatedSection" class="mt-16" style="display:none;">
+    <div class="section-head"><h2 class="small text-lt">⚠️ Adresses non localisées</h2></div>
+    <div id="unlocatedList"></div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="storage.js"></script>
+<script type="module" src="cloudsync.js"></script>
+<script type="module" src="map-clients.js"></script>
+</body>
+</html>

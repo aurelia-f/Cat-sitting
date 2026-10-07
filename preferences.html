@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cat Sitting — Préférences</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8896A">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="back-btn" id="backBtn">←</div>
+    <h1>⚙️ Mes préférences</h1>
+  </div>
+
+  <div class="card-sub" style="margin-bottom:16px;">
+    Ça sert à mettre en avant certains passages quand l'app te propose un itinéraire pour ta journée — tu gardes toujours la main pour réordonner.
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>🏠 Mon adresse</h2></div>
+    <div class="card">
+      <div class="card-sub" style="margin-bottom:8px;">Pour l'afficher sur les cartes avec une pastille différente.</div>
+      <input type="text" id="homeAddressInput" placeholder="Ex : 12 rue des Lilas, Paris 11e">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>⏱️ Durée des visites</h2></div>
+    <div class="card">
+      <div class="pill-group" id="durationPrefGroup">
+        <div class="pill" data-value="1h_first">Commencer par les visites longues (1h)</div>
+        <div class="pill" data-value="30min_first">Commencer par les visites courtes (30 min)</div>
+        <div class="pill" data-value="no_pref">Pas de préférence</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>🔑 Formule Délicat</h2></div>
+    <div class="card">
+      <div class="pill-group" id="difficultyPrefGroup">
+        <div class="pill" data-value="delicat_first">Faire les Délicat en premier</div>
+        <div class="pill" data-value="delicat_last">Faire les Délicat en dernier</div>
+        <div class="pill" data-value="no_pref">Pas de préférence</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>🕐 Heure de départ habituelle</h2></div>
+    <div class="card">
+      <input type="time" id="startTimeInput">
+    </div>
+  </div>
+
+  <button class="btn btn-primary mt-8" id="saveBtn">💾 Enregistrer</button>
+
+</div>
+
+<script src="storage.js"></script>
+<script type="module" src="cloudsync.js"></script>
+<script type="module" src="preferences.js"></script>
+</body>
+</html>

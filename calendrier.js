@@ -2,6 +2,7 @@
    CAT SITTING — calendrier.js
    ============================================ */
 
+await window.hydrateFromSupabase();
 if (!getCurrentUser()) {
   goTo("index.html");
 }
@@ -29,6 +30,7 @@ function getAnimalColorOverrides() {
 }
 function saveAnimalColorOverrides(overrides) {
   Storage.set(userKey("animalcolors"), overrides);
+  if (window.queueCloudSync) window.queueCloudSync();
 }
 function animalColorKey(ownerKey, name) {
   return `${ownerKey || ""}|${name || ""}`;
@@ -110,13 +112,26 @@ function renderGrid() {
 
     let inner = `<div class="num">${day}</div>`;
 
+    // Compte le nombre réel de visites ce jour-là pour une mission Délicat, en tenant
+    // compte des demi-journées de début/fin (ex: dernière visite le matin = 1 seule visite)
+    function delicatVisitsThisDay(pr) {
+      let count = 2;
+      if (ds === pr.date_start && pr.start_period === "apres-midi") count -= 1;
+      if (ds === pr.date_end && pr.end_period === "matin") count -= 1;
+      return Math.max(count, 0);
+    }
+
     // Toutes les paires (animal, propriétaire) en garde ce jour-là
     const animalChips = [];
+    const delicatOwners = new Set();
     pres.forEach(p => {
+      if (p.prestation && p.prestation.mcer_key === "delicat" && delicatVisitsThisDay(p.prestation) >= 2) {
+        delicatOwners.add(p.ownerKey);
+      }
       if (p.animals && p.animals.length > 0) {
         p.animals.forEach(a => animalChips.push({ ownerKey: p.ownerKey, name: a.name || "À définir" }));
       } else {
-        animalChips.push({ ownerKey: p.ownerKey, name: "À définir" });
+        animalChips.push({ ownerKey: p.ownerKey, name: firstName(getOwnerName(p.ownerKey)) });
       }
     });
 
@@ -130,16 +145,21 @@ function renderGrid() {
       if (!chipsByOwner[c.ownerKey]) chipsByOwner[c.ownerKey] = [];
       chipsByOwner[c.ownerKey].push(c);
     });
+    const gardeChipHtml = {}; // owKey -> HTML de la puce, réutilisée en bas si Délicat
     Object.entries(chipsByOwner).forEach(([owKey, animals]) => {
       const color = getAnimalColor(owKey, animals[0].name);
       let label;
       if (animals.length >= 2) {
         // Plusieurs chats chez la même personne : on affiche juste le nom du maître, souligné
-        label = `<u>${escapeHtml(getOwnerName(owKey))}</u>`;
+        label = `<u>${escapeHtml(firstName(getOwnerName(owKey)))}</u>`;
       } else {
         label = escapeHtml(animals[0].name);
       }
-      inner += `<div class="pill-dot" style="background-color:${color};">${label}</div>`;
+      const realCats = getSortedAnimals(owKey).map(a => a.name).filter(Boolean).join(", ") || "Aucun chat associé pour l'instant";
+      const tooltip = `${getOwnerName(owKey)} — ${realCats}`;
+      const chipHtml = `<div class="pill-dot" title="${escapeHtml(tooltip)}" style="background-color:${color};">${label}</div>`;
+      gardeChipHtml[owKey] = chipHtml;
+      inner += chipHtml;
     });
 
     // Regroupe les visites planifiées d'un même chat : si 2 visites (matin + après-midi), affiche M A
@@ -153,9 +173,10 @@ function renderGrid() {
       group.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
       const v = group[0];
       const color = getAnimalColor(v.ownerKey, v.animalName);
-      const ownerSuffix = ownerCounts[v.ownerKey] >= 2 ? ` · <u>${escapeHtml(getOwnerName(v.ownerKey))}</u>` : "";
+      const ownerSuffix = ownerCounts[v.ownerKey] >= 2 ? ` · <u>${escapeHtml(firstName(getOwnerName(v.ownerKey)))}</u>` : "";
       const letters = group.length >= 2 ? ` <b>M</b> <b>A</b>` : "";
-      inner += `<div class="pill-dot" draggable="true" data-visite-id="${v.id}" style="background-color:${color};">${escapeHtml(v.animalName)}${ownerSuffix}${letters}</div>`;
+      const tooltip = `${getOwnerName(v.ownerKey)} — ${v.animalName}`;
+      inner += `<div class="pill-dot" draggable="true" data-visite-id="${v.id}" title="${escapeHtml(tooltip)}" style="background-color:${color};">${escapeHtml(v.animalName)}${ownerSuffix}${letters}</div>`;
     });
 
     const rdvByOwner = {};
@@ -168,11 +189,19 @@ function renderGrid() {
       const distinctAnimals = new Set(group.map(r => r.animalName)).size;
       let label;
       if (distinctAnimals >= 2) {
-        label = `<u>${escapeHtml(getOwnerName(owKey))}</u>`;
+        label = `<u>${escapeHtml(firstName(getOwnerName(owKey)))}</u>`;
       } else {
         label = escapeHtml(group[0].animalName);
       }
-      inner += `<div class="pill-dot" style="background-color:${color};">🔑 ${label}</div>`;
+      const catNames = [...new Set(group.map(r => r.animalName))].join(", ");
+      const tooltip = `${getOwnerName(owKey)} — ${catNames}`;
+      inner += `<div class="pill-dot" title="${escapeHtml(tooltip)}" style="background-color:${color};">🔑 ${label}</div>`;
+    });
+
+    // Missions Délicat (2 visites/jour) : on répète la puce tout en bas de la case
+    // pour représenter visuellement le passage du soir, en plus de celui du matin déjà affiché en haut
+    delicatOwners.forEach(owKey => {
+      if (gardeChipHtml[owKey]) inner += gardeChipHtml[owKey];
     });
 
     cell.innerHTML = inner;
@@ -293,7 +322,7 @@ function renderDayDetail(ds) {
     const color = getAnimalColor(r.ownerKey, r.animalName);
     const distinctAnimals = new Set(group.map(x => x.animalName)).size;
     const nameLabel = distinctAnimals >= 2
-      ? `<u>${escapeHtml(getOwnerName(r.ownerKey))}</u>`
+      ? `<u>${escapeHtml(firstName(getOwnerName(r.ownerKey)))}</u>`
       : escapeHtml(r.animalName);
     html += `
       <div class="card tint-purple">
@@ -390,12 +419,15 @@ function renderAnimalLegend() {
   const entries = [];
   owners.forEach(key => {
     const animals = getSortedAnimals(key);
-    if (animals.length === 0) return;
     if (animals.length >= 2) {
       // Même famille, plusieurs chats : une seule entrée avec le nom du propriétaire, souligné
-      entries.push({ ownerKey: key, colorName: animals[0].name, label: getOwnerName(key), isOwner: true });
-    } else {
+      entries.push({ ownerKey: key, colorName: animals[0].name, label: firstName(getOwnerName(key)), isOwner: true });
+    } else if (animals.length === 1) {
       entries.push({ ownerKey: key, colorName: animals[0].name, label: animals[0].name, isOwner: false });
+    } else {
+      // Pas encore de chat enregistré : on affiche quand même la personne, par son prénom
+      const fn = firstName(getOwnerName(key));
+      entries.push({ ownerKey: key, colorName: fn, label: fn, isOwner: false });
     }
   });
   if (entries.length === 0) {

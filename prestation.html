@@ -81,6 +81,18 @@
         <div class="card-sub mt-8" id="mcerDesc"></div>
         <div class="mt-8" style="font-weight:bold; color:var(--accent-dk); font-size:16px;" id="mcerPriceDisplay"></div>
 
+        <div class="divider"></div>
+
+        <div class="flex-between">
+          <div style="font-weight:bold; font-size:18px;">Total : <span id="totalPriceDisplay">0€</span></div>
+          <button class="btn btn-sm btn-secondary" id="editPriceBtn" type="button">✏️ Modifier</button>
+        </div>
+        <div id="priceOverrideBlock" style="display:none;">
+          <label>Prix total (€)</label>
+          <input type="number" id="p_price_override" step="0.5" min="0">
+          <button class="btn btn-ghost btn-sm mt-8" id="resetPriceBtn" type="button">↩︎ Revenir au calcul automatique</button>
+        </div>
+
         <!-- Apparaît seulement si la formule choisie a 2 visites/jour (ex: Délicat) -->
         <div id="periodSection" style="display:none;">
           <div class="divider"></div>
@@ -164,6 +176,7 @@
 </div>
 
 <script src="storage.js"></script>
-<script src="prestation.js"></script>
+<script type="module" src="cloudsync.js"></script>
+<script type="module" src="prestation.js"></script>
 </body>
 </html>

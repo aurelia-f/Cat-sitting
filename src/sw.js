@@ -4,7 +4,7 @@
    Stratégie : réseau en priorité (network-first), cache en secours
    ============================================ */
 
-const CACHE_NAME = "cat-sitting-v22-supabase";
+const CACHE_NAME = "cat-sitting-v10-supabase";
 const FILES_TO_CACHE = [
   "./index.html",
   "./login.js",
@@ -13,14 +13,6 @@ const FILES_TO_CACHE = [
   "./supabase-config.js",
   "./reset-password.html",
   "./reset-password.js",
-  "./budget.html",
-  "./budget.js",
-  "./preferences.html",
-  "./preferences.js",
-  "./map-clients.html",
-  "./map-clients.js",
-  "./itineraire.html",
-  "./itineraire.js",
   "./accueil.html",
   "./accueil.js",
   "./calendrier.html",

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cat Sitting — Importer une mission</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8896A">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="back-btn" id="backBtn">←</div>
+    <h1>📩 Importer une mission</h1>
+  </div>
+
+  <div id="step1">
+    <div class="card-sub" style="margin-bottom:10px;">
+      Colle ici le texte complet du mail de mission que tu reçois. L'app essaie d'en extraire les infos automatiquement — tu pourras tout vérifier et corriger avant de valider.
+    </div>
+    <textarea id="mailInput" rows="12" placeholder="Voici une nouvelle mission Délicat qui vous a été affectée du..."></textarea>
+    <button class="btn btn-primary mt-16" id="analyzeBtn">🔍 Analyser le mail</button>
+  </div>
+
+  <div id="step2" style="display:none;">
+
+    <div id="matchBanner" class="card tint-orange" style="display:none; margin-bottom:16px;">
+      <div class="card-title" style="font-size:14px;">⚠️ Cette personne existe peut-être déjà</div>
+      <div class="card-sub" id="matchBannerText"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary btn-sm" id="linkExistingBtn">Lier à cette fiche</button>
+        <button class="btn btn-ghost btn-sm" id="createNewAnywayBtn">Créer une nouvelle fiche</button>
+      </div>
+    </div>
+
+    <div class="section sec-green">
+      <div class="section-head"><h2>💶 Mission détectée</h2></div>
+      <div class="card">
+        <label>Formule</label>
+        <div class="pill-group" id="formulaPillGroup"></div>
+        <label>Date de début</label>
+        <input type="date" id="p_date_start">
+        <label>Date de fin</label>
+        <input type="date" id="p_date_end">
+        <label>Prix final (€)</label>
+        <input type="number" id="p_price_override" step="0.5" min="0" placeholder="Laisse vide pour calcul automatique">
+        <div class="field-hint" id="priceAnnounced"></div>
+
+        <!-- Apparaît seulement si la formule a 2 visites/jour (ex: Délicat) -->
+        <div id="periodSection" style="display:none;">
+          <div class="divider"></div>
+          <div class="card-sub">Cette formule prévoit 2 visites par jour. Précise le moment d'arrivée et de départ pour ajuster le nombre de visites facturées.</div>
+          <label class="mt-16">Le 1er jour, tu commences...</label>
+          <div class="pill-group" id="startPeriodGroup">
+            <div class="pill" data-period="matin">Le matin</div>
+            <div class="pill" data-period="apres-midi">L'après-midi</div>
+          </div>
+          <label class="mt-16">Le dernier jour, tu termines...</label>
+          <div class="pill-group" id="endPeriodGroup">
+            <div class="pill" data-period="matin">Le matin</div>
+            <div class="pill" data-period="apres-midi">L'après-midi</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section sec-orange">
+      <div class="section-head"><h2>👤 Client</h2></div>
+      <div class="card">
+        <label>Nom</label>
+        <input type="text" id="c_name">
+        <label>Adresse</label>
+        <input type="text" id="c_address">
+        <label>Téléphone</label>
+        <input type="tel" id="c_phone">
+        <label>Email</label>
+        <input type="text" id="c_email">
+      </div>
+    </div>
+
+    <div class="section sec-purple">
+      <div class="section-head"><h2>📝 Remarques du client (brut)</h2></div>
+      <div class="card">
+        <div class="card-sub">Lis ce texte pour noter toi-même les infos sur l'animal (nom, race, comportement, santé) — l'extraction automatique n'est pas fiable pour ces détails.</div>
+        <textarea id="c_remarks" rows="6" class="mt-8" readonly></textarea>
+      </div>
+    </div>
+
+    <button class="btn btn-primary mt-8" id="confirmImportBtn">✅ Valider et créer la prestation</button>
+    <button class="btn btn-ghost btn-block mt-8" id="cancelImportBtn">Annuler</button>
+  </div>
+
+</div>
+
+<script src="storage.js"></script>
+<script type="module" src="cloudsync.js"></script>
+<script type="module" src="import.js"></script>
+</body>
+</html>

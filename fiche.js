@@ -2,6 +2,7 @@
    CAT SITTING — fiche.js
    ============================================ */
 
+await window.hydrateFromSupabase();
 if (!getCurrentUser()) {
   goTo("index.html");
 }
@@ -230,6 +231,7 @@ function loadInfoTab() {
   const info = currentProfile.info || {};
   document.getElementById("info_owner_name").value = info.owner_name || currentProfile.name || "";
   document.getElementById("info_owner_phone").value = info.owner_phone || "";
+  document.getElementById("info_owner_email").value = info.owner_email || "";
   document.getElementById("info_address").value = info.address || "";
   document.getElementById("info_access_code").value = info.access_code || "";
   document.getElementById("info_vet").value = info.vet || "";
@@ -242,6 +244,7 @@ function collectInfoTab() {
   return {
     owner_name: document.getElementById("info_owner_name").value.trim(),
     owner_phone: document.getElementById("info_owner_phone").value.trim(),
+    owner_email: document.getElementById("info_owner_email").value.trim(),
     address: document.getElementById("info_address").value.trim(),
     access_code: document.getElementById("info_access_code").value.trim(),
     vet: document.getElementById("info_vet").value.trim(),
@@ -291,8 +294,9 @@ function renderPrestations() {
   }).join("");
 
   list.querySelectorAll("[data-edit-pres]").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       persistProfile(false);
+      await window.flushCloudSync();
       goTo(`prestation.html?key=${encodeURIComponent(currentKey)}&idx=${btn.dataset.editPres}`);
     });
   });
@@ -307,8 +311,9 @@ function renderPrestations() {
   });
 }
 
-document.getElementById("addPrestationBtn").addEventListener("click", () => {
+document.getElementById("addPrestationBtn").addEventListener("click", async () => {
   persistProfile(false);
+  await window.flushCloudSync();
   goTo(`prestation.html?key=${encodeURIComponent(currentKey)}&new=1`);
 });
 
@@ -328,16 +333,18 @@ function persistProfile(showAlert) {
   }
 }
 
-document.getElementById("saveBtn").addEventListener("click", () => {
+document.getElementById("saveBtn").addEventListener("click", async () => {
   persistProfile(true);
+  await window.flushCloudSync();
   goTo("accueil.html");
 });
 
-document.getElementById("deleteFicheBtn").addEventListener("click", () => {
+document.getElementById("deleteFicheBtn").addEventListener("click", async () => {
   if (confirm(`Supprimer définitivement la fiche de ${currentProfile.name} ?`)) {
     profiles = getProfiles();
     delete profiles[currentKey];
     saveProfiles(profiles);
+    await window.flushCloudSync();
     goTo("accueil.html");
   }
 });
