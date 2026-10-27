@@ -4,7 +4,7 @@
    Stratégie : réseau en priorité (network-first), cache en secours
    ============================================ */
 
-const CACHE_NAME = "cat-sitting-v22-supabase";
+const CACHE_NAME = "cat-sitting-v36-correctifs";
 const FILES_TO_CACHE = [
   "./index.html",
   "./login.js",
@@ -35,12 +35,20 @@ const FILES_TO_CACHE = [
   "./import.js",
   "./admin.html",
   "./admin.js",
+  "./aide.html",
+  "./aide.js",
+  "./diagnostic.html",
+  "./diagnostic.js",
   "./message.html",
   "./messages.html",
   "./style.css",
   "./storage.js",
+  "./icons.js",
+  "./footer.js",
   "./manifest.json",
-  "./icon.svg"
+  "./icon.svg",
+  "./logo.png",
+  "./logo-192.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -75,4 +83,25 @@ self.addEventListener("fetch", (event) => {
       })
       .catch(() => caches.match(event.request))
   );
+});
+
+/* ---------- Notifications push (rappels de départs et de clés) ---------- */
+self.addEventListener("push", (event) => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : "" }; }
+  event.waitUntil(self.registration.showNotification(d.title || "Petsitting", {
+    body: d.body || "",
+    icon: "./logo-192.png",
+    badge: "./logo-192.png",
+    data: { url: d.url || "./accueil.html" }
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "./accueil.html";
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ("focus" in c) return c.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });

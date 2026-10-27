@@ -62,17 +62,31 @@ function monthLabel(d) {
 }
 
 /* renvoie les prestations actives pour une date donnée (ds format YYYY-MM-DD) */
+/* Filtre de site du calendrier : "__all__" par défaut (le calendrier montre tout) */
+function calSiteFilter() {
+  const v = localStorage.getItem(userKey("calsite")) || ALL_SITES;
+  return (v === ALL_SITES || getMySites().includes(v)) ? v : ALL_SITES;
+}
+function ownerInCalFilter(ownerKey) {
+  const f = calSiteFilter();
+  if (f === ALL_SITES) return true;
+  return siteOfProfile(getProfiles()[ownerKey]) === f;
+}
+function siteChipOwner(ownerKey) {
+  return getMySites().length >= 2 ? siteBadge(getProfiles()[ownerKey]) : "";
+}
+
 function prestationsForDate(ds) {
-  return getAnimalsByDate(ds);
+  return getAnimalsByDate(ds).filter(p => ownerInCalFilter(p.ownerKey));
 }
 
 function calEventsForDate(ds) {
   const events = getCalEvents();
-  return events[ds] || [];
+  return (events[ds] || []).filter(v => ownerInCalFilter(v.ownerKey));
 }
 
 function keyRdvPillsForDate(ds) {
-  return getKeyRdvsByDate(ds);
+  return getKeyRdvsByDate(ds).filter(r => ownerInCalFilter(r.ownerKey));
 }
 
 function getOwnerName(ownerKey) {
@@ -195,7 +209,7 @@ function renderGrid() {
       }
       const catNames = [...new Set(group.map(r => r.animalName))].join(", ");
       const tooltip = `${getOwnerName(owKey)} — ${catNames}`;
-      inner += `<div class="pill-dot" title="${escapeHtml(tooltip)}" style="background-color:${color};">🔑 ${label}</div>`;
+      inner += `<div class="pill-dot" title="${escapeHtml(tooltip)}" style="background-color:${color};">${ic("key")} ${label}</div>`;
     });
 
     // Missions Délicat (2 visites/jour) : on répète la puce tout en bas de la case
@@ -281,12 +295,12 @@ function renderDayDetail(ds) {
       const color = getAnimalColor(p.ownerKey, a.name);
       return `<span style="display:inline-flex; align-items:center; gap:4px; margin-right:8px;"><span style="width:9px; height:9px; border-radius:50%; background:${color}; display:inline-block;"></span>${animalEmoji(a.animal_type)} ${escapeHtml(a.name)}</span>`;
     }).join("");
-    const ownerLine = pres.length > 1 ? `<div class="card-sub">👤 ${escapeHtml(getOwnerName(p.ownerKey))}</div>` : "";
+    const ownerLine = pres.length > 1 ? `<div class="card-sub">${ic("user")} ${escapeHtml(getOwnerName(p.ownerKey))}</div>` : "";
     html += `
       <div class="card tint-blue">
         <div class="card-row">
           <div>
-            <div class="card-title" style="font-size:14px;">${chipsHtml}</div>
+            <div class="card-title" style="font-size:14px;">${chipsHtml} ${siteChipOwner(p.ownerKey)}</div>
             ${ownerLine}
           </div>
           <div class="icon-action" onclick="goTo('fiche.html?key=${encodeURIComponent(p.ownerKey)}')">›</div>
@@ -302,10 +316,10 @@ function renderDayDetail(ds) {
       <div class="card tint-purple">
         <div class="card-row">
           <div>
-            <div class="card-title" style="font-size:14px; display:flex; align-items:center; gap:6px;"><span style="width:9px; height:9px; border-radius:50%; background:${color}; display:inline-block;"></span>🐾 ${escapeHtml(v.animalName)}</div>
+            <div class="card-title" style="font-size:14px; display:flex; align-items:center; gap:6px;"><span style="width:9px; height:9px; border-radius:50%; background:${color}; display:inline-block;"></span>${ic("paw")} ${escapeHtml(v.animalName)} ${siteChipOwner(v.ownerKey)}</div>
             <div class="card-sub">Visite planifiée ${v.time ? "à " + v.time : ""}${ownerBit}</div>
           </div>
-          <div class="icon-action" data-del-visite="${v.id}">🗑</div>
+          <div class="icon-action" data-del-visite="${v.id}">${ic("trash")}</div>
         </div>
       </div>
     `;
@@ -326,7 +340,7 @@ function renderDayDetail(ds) {
       : escapeHtml(r.animalName);
     html += `
       <div class="card tint-purple">
-        <div class="card-title" style="font-size:14px; display:flex; align-items:center; gap:6px;"><span style="width:9px; height:9px; border-radius:50%; background:${color}; display:inline-block;"></span>🔑 ${r.type === "recuperation" ? "Récupération" : "Rendu"} — ${nameLabel}</div>
+        <div class="card-title" style="font-size:14px; display:flex; align-items:center; gap:6px;"><span style="width:9px; height:9px; border-radius:50%; background:${color}; display:inline-block;"></span>${ic("key")} ${r.type === "recuperation" ? "Récupération" : "Rendu"} — ${nameLabel} ${siteChipOwner(r.ownerKey)}</div>
         <div class="card-sub">${r.time || ""} ${r.place ? "· " + escapeHtml(r.place) : ""}</div>
       </div>
     `;
@@ -366,13 +380,13 @@ function openVisiteModal(ds) {
     p.animals.forEach(a => {
       const opt = document.createElement("option");
       opt.value = JSON.stringify({ ownerKey: p.ownerKey, name: a.name });
-      opt.textContent = `${animalEmoji(a.animal_type)} ${a.name}`;
+      opt.textContent = a.name;
       select.appendChild(opt);
     });
     if (p.animals.length === 0) {
       const opt = document.createElement("option");
       opt.value = JSON.stringify({ ownerKey: p.ownerKey, name: "À définir" });
-      opt.textContent = "À définir 🐾";
+      opt.textContent = "À définir";
       select.appendChild(opt);
     }
   });
@@ -415,7 +429,7 @@ document.getElementById("nextMonth").addEventListener("click", () => {
 
 function renderAnimalLegend() {
   const el = document.getElementById("animalLegend");
-  const owners = getSortedOwners();
+  const owners = getSortedOwners(ALL_SITES).filter(ownerInCalFilter);
   const entries = [];
   owners.forEach(key => {
     const animals = getSortedAnimals(key);
@@ -475,7 +489,7 @@ function openColorPicker(ownerKey, name, displayLabel) {
   });
 
   const customInput = document.getElementById("customColorInput");
-  customInput.value = (selectedColorValue && selectedColorValue.startsWith("#")) ? selectedColorValue : "#E8896A";
+  customInput.value = (selectedColorValue && selectedColorValue.startsWith("#")) ? selectedColorValue : "#EF878B";
 
   document.getElementById("modalColorPicker").classList.add("open");
 }
@@ -513,5 +527,21 @@ document.getElementById("resetColorBtn").addEventListener("click", () => {
 });
 
 renderDow();
+/* Filtre par site (visible seulement si plusieurs sites) */
+(function initCalSiteFilter() {
+  const sites = getMySites();
+  if (sites.length < 2) return;
+  const sel = document.getElementById("calSiteSelect");
+  sel.innerHTML = `<option value="${ALL_SITES}">Tous mes sites</option>` +
+    sites.map(x => `<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
+  sel.value = calSiteFilter();
+  document.getElementById("calSiteBar").style.display = "";
+  sel.addEventListener("change", () => {
+    localStorage.setItem(userKey("calsite"), sel.value);
+    renderGrid();
+    renderAnimalLegend();
+  });
+})();
+
 renderGrid();
 renderAnimalLegend();

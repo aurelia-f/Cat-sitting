@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Petsitting — Diagnostic</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#EF878B">
+<link rel="apple-touch-icon" href="logo.png">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="back-btn" id="backBtn"><i data-ic="arrow-left"></i></div>
+    <h1><i data-ic="wrench"></i> Diagnostic</h1>
+  </div>
+
+  <button class="btn btn-primary" id="runDiagBtn">▶️ Lancer le diagnostic</button>
+  <div id="diagResults" style="margin-top:14px;"></div>
+  <button class="btn btn-outline btn-block mt-16" id="sendDiagBtn" style="display:none;"><i data-ic="send"></i> Envoyer ce résultat à l'assistance</button>
+
+</div>
+<script src="icons.js" defer></script>
+<script src="footer.js" defer></script>
+<script src="storage.js"></script>
+<script type="module" src="cloudsync.js"></script>
+<script type="module" src="diagnostic.js"></script>
+</body>
+</html>

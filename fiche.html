@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cat Sitting — Fiche</title>
+<title>Petsitting — Fiche</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#E8896A">
-<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#EF878B">
+<link rel="apple-touch-icon" href="logo.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -14,14 +14,14 @@
 <div class="app">
 
   <div class="topbar">
-    <div class="back-btn" id="backBtn">←</div>
+    <div class="back-btn" id="backBtn"><i data-ic="arrow-left"></i></div>
     <h1 id="ficheTitle">Fiche</h1>
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="animaux">🐾 Animaux</button>
-    <button class="tab-btn" data-tab="infos">📋 Infos</button>
-    <button class="tab-btn" data-tab="prestations">💶 Prestations</button>
+    <button class="tab-btn active" data-tab="animaux"><i data-ic="paw"></i> Animaux</button>
+    <button class="tab-btn" data-tab="infos"><i data-ic="list"></i> Infos</button>
+    <button class="tab-btn" data-tab="prestations"><i data-ic="euro"></i> Prestations</button>
   </div>
 
   <!-- ONGLET ANIMAUX -->
@@ -32,6 +32,10 @@
 
   <!-- ONGLET INFOS -->
   <div class="tab-panel" id="panel-infos">
+    <div id="siteField" style="display:none;">
+      <label>Site de cette fiche</label>
+      <select id="ficheSite"></select>
+    </div>
     <label>Nom du propriétaire</label>
     <input type="text" id="info_owner_name">
 
@@ -42,7 +46,9 @@
     <input type="text" id="info_owner_email" placeholder="client@exemple.fr">
 
     <label>Adresse</label>
-    <input type="text" id="info_address" placeholder="12 rue des Lilas, Paris 11e">
+    <input type="text" id="info_address" placeholder="12 rue des Lilas">
+    <label>Ville</label>
+    <input type="text" id="info_city" placeholder="Ex : Paris, Lyon, Saint-Denis…" autocomplete="off">
 
     <label>Code d'accès</label>
     <input type="text" id="info_access_code" placeholder="Ex : B1234">
@@ -66,9 +72,34 @@
     <button class="btn btn-outline mt-8" id="addPrestationBtn">+ Ajouter une prestation</button>
   </div>
 
-  <button class="btn btn-primary mt-16" id="saveBtn">💾 Sauvegarder</button>
-  <button class="btn btn-danger btn-block mt-8" id="deleteFicheBtn">🗑 Supprimer cette fiche</button>
+  <button class="btn btn-primary mt-16" id="saveBtn"><i data-ic="save"></i> Sauvegarder</button>
+  <button class="btn btn-danger btn-block mt-8" id="deleteFicheBtn"><i data-ic="trash"></i> Supprimer cette fiche</button>
 
+</div>
+
+<!-- Modal : message au client -->
+<div class="modal-overlay" id="modalMessage">
+  <div class="modal">
+    <div class="modal-head">
+      <h3><i data-ic="chat"></i> Message au client</h3>
+      <button class="modal-close" data-close="modalMessage"><i data-ic="x"></i></button>
+    </div>
+    <div class="pill-group" id="msgKind">
+      <div class="pill selected" data-value="nouvelles">Tout va bien</div>
+      <div class="pill" data-value="fin">Fin de garde + clés</div>
+    </div>
+    <label class="mt-8">Petit détail à ajouter (facultatif)</label>
+    <input type="text" id="msgExtra" placeholder="Ex : il a bien mangé et joué avec la souris">
+    <label class="mt-8">Message</label>
+    <textarea id="msgText" rows="7"></textarea>
+    <div class="flex gap-8 mt-8" style="flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" id="msgCopy"><i data-ic="note"></i> Copier</button>
+      <a class="btn btn-secondary btn-sm" id="msgSms" href="#"><i data-ic="chat"></i> SMS</a>
+      <a class="btn btn-secondary btn-sm" id="msgWa" href="#" target="_blank" rel="noopener"><i data-ic="send"></i> WhatsApp</a>
+      <a class="btn btn-secondary btn-sm" id="msgMail" href="#"><i data-ic="mail"></i> Email</a>
+    </div>
+    <div class="small text-lt mt-8" id="msgHint"></div>
+  </div>
 </div>
 
 <!-- Modal Animal -->
@@ -76,11 +107,20 @@
   <div class="modal">
     <div class="modal-head">
       <h3 id="animalModalTitle">Ajouter un animal</h3>
-      <button class="modal-close" data-close="modalAnimal">✕</button>
+      <button class="modal-close" data-close="modalAnimal"><i data-ic="x"></i></button>
     </div>
 
     <label>Prénom</label>
     <input type="text" id="a_name" placeholder="Ex : Luna">
+
+    <label>Photo (facultative)</label>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <img id="a_photo_preview" alt="" style="display:none; width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid var(--border);">
+      <div style="flex:1;">
+        <input type="file" id="a_photo_file" accept="image/*">
+        <a href="#" id="a_photo_remove" class="small" style="display:none; color:var(--red);">Retirer la photo</a>
+      </div>
+    </div>
 
     <label>Type d'animal</label>
     <div class="pill-group" data-field="animal_type" data-multi="1">
@@ -198,6 +238,8 @@
   </div>
 </div>
 
+<script src="icons.js" defer></script>
+<script src="footer.js" defer></script>
 <script src="storage.js"></script>
 <script type="module" src="cloudsync.js"></script>
 <script type="module" src="fiche.js"></script>

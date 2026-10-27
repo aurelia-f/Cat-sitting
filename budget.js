@@ -59,7 +59,38 @@ function renderBarList(container, items, colorVar) {
   }).join("");
 }
 
+/* Choix du site + récapitulatif du chiffre d'affaires par site (si plusieurs sites) */
+function renderSiteParts() {
+  const sites = getMySites();
+  const bar = document.getElementById("siteBar");
+  if (sites.length < 2) { bar.style.display = "none"; return; }
+  bar.style.display = "";
+  const sel = document.getElementById("budgetSite");
+  sel.innerHTML = sites.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("") +
+    `<option value="${ALL_SITES}">Tous mes sites</option>`;
+  sel.value = getActiveSite();
+  sel.onchange = () => { setActiveSite(sel.value); render(); };
+
+  const rows = sites.map(s => {
+    const list = getAllPrestations(s);
+    return { s, total: list.reduce((sum, p) => sum + calcPrestation(p).total, 0), n: list.length };
+  });
+  const grand = rows.reduce((sum, r) => sum + r.total, 0);
+  let box = document.getElementById("siteBreakdown");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "siteBreakdown";
+    document.querySelector(".stats-row").after(box);
+  }
+  box.innerHTML = `<div class="card" style="margin-top:12px;">
+    <div class="card-title">${ic("building")} Chiffre d'affaires par site</div>
+    ${rows.map(r => `<div class="flex-between small mt-8"><span>${escapeHtml(r.s)} <span class="text-lt">· ${r.n} prestation${r.n > 1 ? "s" : ""}</span></span><b>${Math.round(r.total)}€</b></div>`).join("")}
+    <div class="flex-between mt-8" style="border-top:1px solid var(--border); padding-top:8px;"><b>Total tous sites</b><b>${Math.round(grand)}€</b></div>
+  </div>`;
+}
+
 function render() {
+  renderSiteParts();
   const all = getAllPrestations();
 
   const total = all.reduce((sum, p) => sum + calcPrestation(p).total, 0);

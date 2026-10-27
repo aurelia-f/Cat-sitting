@@ -34,6 +34,24 @@ document.getElementById("goToLogin").addEventListener("click", (e) => {
   showLogin();
 });
 
+/* ---------- Liste des sites déjà connus (suggestions) ---------- */
+(async function loadSiteSuggestions() {
+  try {
+    const sites = await window.listSites();
+    document.getElementById("siteList").innerHTML = sites
+      .map(n => `<option value="${String(n).replace(/"/g, "&quot;")}"></option>`).join("");
+  } catch (e) { /* pas de suggestions, la saisie libre fonctionne quand même */ }
+})();
+
+document.getElementById("addExtraSite").addEventListener("click", (e) => {
+  e.preventDefault();
+  const inp = document.createElement("input");
+  inp.type = "text"; inp.setAttribute("list", "siteList"); inp.placeholder = "Autre site"; inp.autocomplete = "off";
+  inp.style.marginTop = "6px";
+  document.getElementById("extraSites").appendChild(inp);
+  inp.focus();
+});
+
 /* ---------- Connexion ---------- */
 document.getElementById("confirmLogin").addEventListener("click", async () => {
   const email = document.getElementById("loginEmail").value.trim();
@@ -74,7 +92,9 @@ document.getElementById("confirmSignup").addEventListener("click", async () => {
   }
 
   try {
-    const data = await signUp(email, password, name);
+    const sites = [...document.querySelectorAll("#newSite, #extraSites input")]
+      .map(i => i.value.trim()).filter(Boolean);
+    const data = await signUp(email, password, name, sites);
 
     // Supabase renvoie un tableau "identities" vide quand l'email est déjà
     // utilisé par un compte confirmé (pour éviter de révéler l'info autrement)
@@ -131,33 +151,5 @@ document.getElementById("confirmForgotPassword").addEventListener("click", async
   } catch (err) {
     errorEl.textContent = traduireErreurAuth(err.message);
     errorEl.style.display = "block";
-  }
-});
-
-/* ---------- Accès admin caché (5 appuis sur la patte + code secret) ---------- */
-const ADMIN_CODE = "0808";
-let pawTapCount = 0;
-let pawTapTimer = null;
-
-document.getElementById("pawTrigger").addEventListener("click", () => {
-  pawTapCount++;
-  clearTimeout(pawTapTimer);
-  pawTapTimer = setTimeout(() => { pawTapCount = 0; }, 2500);
-  if (pawTapCount >= 5) {
-    pawTapCount = 0;
-    document.getElementById("adminCodeInput").value = "";
-    document.getElementById("adminCodeError").style.display = "none";
-    openModal("modalAdminCode");
-  }
-});
-
-document.getElementById("confirmAdminCode").addEventListener("click", () => {
-  const val = document.getElementById("adminCodeInput").value.trim();
-  if (val === ADMIN_CODE) {
-    sessionStorage.setItem("cs-admin-unlocked", "1");
-    closeModal("modalAdminCode");
-    goTo("admin.html");
-  } else {
-    document.getElementById("adminCodeError").style.display = "block";
   }
 });

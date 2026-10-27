@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cat Sitting — Carte des clients</title>
+<title>Petsitting — Carte des clients</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#E8896A">
-<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#EF878B">
+<link rel="apple-touch-icon" href="logo.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="style.css">
@@ -20,20 +20,22 @@
 <div class="app">
 
   <div class="topbar">
-    <div class="back-btn" id="backBtn">←</div>
-    <h1>🗺️ Carte des clients</h1>
+    <div class="back-btn" id="backBtn"><i data-ic="arrow-left"></i></div>
+    <h1><i data-ic="map"></i> Carte des clients</h1>
   </div>
 
   <div id="mapStatus" class="empty-state" style="margin-bottom:12px;">Localisation des adresses en cours…</div>
   <div id="map" style="display:none;"></div>
 
   <div id="unlocatedSection" class="mt-16" style="display:none;">
-    <div class="section-head"><h2 class="small text-lt">⚠️ Adresses non localisées</h2></div>
+    <div class="section-head"><h2 class="small text-lt"><i data-ic="alert"></i> Adresses non localisées</h2></div>
     <div id="unlocatedList"></div>
   </div>
 
 </div>
 
+<script src="icons.js" defer></script>
+<script src="footer.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="storage.js"></script>
 <script type="module" src="cloudsync.js"></script>

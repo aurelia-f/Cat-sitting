@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Petsitting — Aide</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#EF878B">
+<link rel="apple-touch-icon" href="logo.png">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="back-btn" id="backBtn"><i data-ic="arrow-left"></i></div>
+    <h1><i data-ic="lifebuoy"></i> Centre d'aide</h1>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Quelque chose ne marche pas ?</div>
+    <div class="card-sub">Remplis ce formulaire, ça m'arrive directement avec les infos utiles pour corriger.</div>
+  </div>
+
+  <label>Sur quelle page ?</label>
+  <select id="bugPage">
+    <option value="">— Choisir —</option>
+    <option>Connexion / inscription</option>
+    <option>Accueil</option>
+    <option>Calendrier</option>
+    <option>Fiche (animaux, infos)</option>
+    <option>Prestation</option>
+    <option>Import d'un mail de mission</option>
+    <option>Budget</option>
+    <option>Carte des clients</option>
+    <option>Itinéraire</option>
+    <option>Préférences</option>
+    <option>Autre</option>
+  </select>
+
+  <label>Gravité</label>
+  <div class="pill-group" id="bugSeverity">
+    <div class="pill" data-value="bloquant"><i data-ic="dot"></i> Bloquant (je ne peux plus rien faire)</div>
+    <div class="pill" data-value="genant"><i data-ic="dot-half"></i> Gênant</div>
+    <div class="pill" data-value="detail"><i data-ic="dot-empty"></i> Petit détail</div>
+  </div>
+
+  <label>Qu'est-ce que tu faisais ?</label>
+  <textarea id="bugDone" placeholder="Ex : j'ai cliqué sur « Sauvegarder » dans une fiche"></textarea>
+
+  <label>Qu'est-ce que tu attendais ? Et que s'est-il passé ?</label>
+  <textarea id="bugExpected" placeholder="Ex : je pensais retourner à l'accueil, mais rien ne s'est passé"></textarea>
+
+  <label>Capture d'écran (facultatif)</label>
+  <input type="file" id="bugShot" accept="image/*">
+  <div id="shotInfo" class="small text-lt" style="margin-top:4px;"></div>
+
+  <div id="bugFeedback" class="small" style="display:none; margin:8px 0;"></div>
+  <button class="btn btn-primary mt-16" id="sendBugBtn">Envoyer</button>
+
+  <div class="divider"></div>
+  <button class="btn btn-outline btn-block" id="diagBtn"><i data-ic="wrench"></i> Lancer un diagnostic de l'app</button>
+  <p class="small text-lt">Vérifie en un clic ta connexion, la synchronisation et tes données.</p>
+
+</div>
+<script src="icons.js" defer></script>
+<script src="footer.js" defer></script>
+<script src="storage.js"></script>
+<script type="module" src="cloudsync.js"></script>
+<script type="module" src="aide.js"></script>
+</body>
+</html>

@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cat Sitting — Calendrier</title>
+<title>Petsitting — Calendrier</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#E8896A">
-<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#EF878B">
+<link rel="apple-touch-icon" href="logo.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -14,8 +14,8 @@
 <div class="app">
 
   <div class="topbar">
-    <div class="back-btn" id="backBtn">←</div>
-    <h1>📅 Calendrier</h1>
+    <div class="back-btn" id="backBtn"><i data-ic="arrow-left"></i></div>
+    <h1><i data-ic="calendar"></i> Calendrier</h1>
   </div>
 
   <div class="cal-head">
@@ -24,11 +24,15 @@
     <div class="icon-btn" id="nextMonth">›</div>
   </div>
 
+  <div id="calSiteBar" class="site-bar" style="display:none;">
+    <select id="calSiteSelect" aria-label="Filtrer par site"></select>
+  </div>
+
   <div class="cal-grid" id="calDow"></div>
   <div class="cal-grid mt-8" id="calGrid"></div>
 
   <div class="mt-16 small text-lt">
-    🐾 Garde &nbsp; ⏰ Visite planifiée &nbsp; 🔑 RDV clés — la couleur indique le chat
+    <i data-ic="paw"></i> Garde &nbsp; <i data-ic="alarm"></i> Visite planifiée &nbsp; <i data-ic="key"></i> RDV clés — la couleur indique le chat
   </div>
   <div class="mt-8" id="animalLegend" style="display:flex; flex-wrap:wrap; gap:6px 12px;"></div>
 
@@ -44,7 +48,7 @@
   <div class="modal">
     <div class="modal-head">
       <h3>Planifier une visite</h3>
-      <button class="modal-close" data-close="modalVisite">✕</button>
+      <button class="modal-close" data-close="modalVisite"><i data-ic="x"></i></button>
     </div>
     <label>Animal</label>
     <select id="visiteAnimalSelect"></select>
@@ -62,12 +66,12 @@
   <div class="modal">
     <div class="modal-head">
       <h3 id="colorPickerTitle">Couleur du chat</h3>
-      <button class="modal-close" data-close="modalColorPicker">✕</button>
+      <button class="modal-close" data-close="modalColorPicker"><i data-ic="x"></i></button>
     </div>
     <div class="color-swatch-group" id="colorSwatchGroup"></div>
     <label class="mt-16">Ou choisis n'importe quelle couleur</label>
     <input type="color" id="customColorInput" style="width:100%; height:44px; border:none; border-radius:10px; cursor:pointer; padding:0;">
-    <button class="btn btn-ghost btn-block mt-16" id="resetColorBtn">🔄 Couleur automatique</button>
+    <button class="btn btn-ghost btn-block mt-16" id="resetColorBtn"><i data-ic="refresh"></i> Couleur automatique</button>
     <div class="modal-actions">
       <button class="btn btn-ghost" data-close="modalColorPicker">Annuler</button>
       <button class="btn btn-primary" id="saveColorBtn">Enregistrer</button>
@@ -75,6 +79,8 @@
   </div>
 </div>
 
+<script src="icons.js" defer></script>
+<script src="footer.js" defer></script>
 <script src="storage.js"></script>
 <script type="module" src="cloudsync.js"></script>
 <script type="module" src="calendrier.js"></script>

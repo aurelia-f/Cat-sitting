@@ -4,6 +4,9 @@
    DOIT être chargé EN PREMIER dans chaque page HTML
    ============================================ */
 
+/* Sécurité : si icons.js n'est pas chargé, on n'affiche simplement pas d'icône (plus d'erreur « ic is not defined ») */
+if (typeof window.ic !== "function") window.ic = function () { return ""; };
+
 /* ---------- Stockage bas niveau ---------- */
 const Storage = {
   get(key) {
@@ -96,6 +99,87 @@ function savePrefs(p) {
   return ok;
 }
 
+/* ---------- Multi-sites ----------
+   Une personne peut travailler pour plusieurs sites de cat-sitting.
+   Chaque fiche porte un champ `site`. Un « site actif » filtre les fiches, prestations et le CA ;
+   le calendrier, lui, montre tout (avec une pastille du site). "__all__" = tous mes sites. */
+const ALL_SITES = "__all__";
+function getMySites() {
+  const p = Storage.get(userKey("prefs")) || {};
+  return Array.isArray(p.my_sites) ? p.my_sites : [];
+}
+function saveMySites(list) {
+  const p = Storage.get(userKey("prefs")) || {};
+  p.my_sites = list;
+  Storage.set(userKey("prefs"), p);
+  if (window.queueCloudSync) window.queueCloudSync();
+}
+function getActiveSite() {
+  const sites = getMySites();
+  if (sites.length === 0) return "";
+  if (sites.length === 1) return sites[0];
+  const v = localStorage.getItem(userKey("activesite"));
+  return (v === ALL_SITES || sites.includes(v)) ? v : sites[0];
+}
+function setActiveSite(v) {
+  localStorage.setItem(userKey("activesite"), v);
+}
+/* Site d'une fiche : les anciennes fiches (sans site) comptent pour le premier site */
+function siteOfProfile(p) {
+  return (p && p.site) || getMySites()[0] || "";
+}
+function profileMatchesSite(p, siteFilter) {
+  const f = siteFilter === undefined ? getActiveSite() : siteFilter;
+  if (!f || f === ALL_SITES) return true;
+  return siteOfProfile(p) === f;
+}
+/* Site à donner à une nouvelle fiche */
+function getCreationSite() {
+  const a = getActiveSite();
+  return (a && a !== ALL_SITES) ? a : (getMySites()[0] || "");
+}
+/* Les anciennes fiches reçoivent le premier site choisi */
+function assignLegacyProfilesToSite(site) {
+  const profiles = getProfiles();
+  let changed = false;
+  Object.values(profiles).forEach(p => { if (!p.site) { p.site = site; changed = true; } });
+  if (changed) saveProfiles(profiles);
+}
+/* Petite pastille « nom du site » (seulement si l'utilisatrice a plusieurs sites) */
+function siteBadge(p) {
+  if (getMySites().length < 2) return "";
+  const s = siteOfProfile(p);
+  if (!s) return "";
+  const div = document.createElement("div"); div.textContent = s;
+  return `<span class="site-chip">${div.innerHTML}</span>`;
+}
+
+/* ---------- Rappels (départs, fins de garde, clés) ----------
+   Même logique que la fonction d'envoi des notifications (supabase/functions/send-reminders). */
+function getReminders() {
+  const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return fmtISODate(x); };
+  const today = fmtISODate(new Date());
+  const tomorrow = addDays(new Date(), 1);
+  const out = [];
+  const when = (d) => d === today ? "Aujourd'hui" : "Demain";
+  Object.entries(getProfiles()).forEach(([key, p]) => {
+    const who = p.name || key;
+    const animals = (p.animals || []).map(a => a.name).filter(Boolean).join(", ");
+    const label = animals ? `${who} (${animals})` : who;
+    (p.prestations || []).forEach(pr => {
+      if (pr.date_start === today || pr.date_start === tomorrow) out.push({ icon: "paw", text: `${when(pr.date_start)} : début de garde chez ${label}`, key });
+      if (pr.date_end === today || pr.date_end === tomorrow) out.push({ icon: "calendar", text: `${when(pr.date_end)} : fin de garde chez ${label}`, key });
+      [["keys_pickup_date", "keys_pickup_time", "keys_picked_up", "récupérer les clés"], ["keys_rdv_date", "keys_rdv_time", "keys_returned", "rendre les clés"]].forEach(([d, t, done, txt]) => {
+        if (!pr[done] && (pr[d] === today || pr[d] === tomorrow)) {
+          out.push({ icon: "key", text: `${when(pr[d])}${pr[t] ? " à " + pr[t] : ""} : ${txt} — ${label}`, key });
+        }
+      });
+      if (pr.date_end && pr.date_end < today && !pr.keys_returned) out.push({ icon: "alert", text: `Clés à rendre : ${label}`, key });
+    });
+  });
+  return out;
+}
+
 /* ---------- Tarifs MCER (définitifs) ---------- */
 const DEFAULT_TARIFS = {
   independant: { nom: "Indépendant", desc: "1 visite de 30 min tous les 2 jours", visites: 0.5, prix: 10.5, parVisite: true },
@@ -111,9 +195,9 @@ const DEFAULT_TARIFS = {
 const KEY_RETURN_IN_PERSON_PRICE = 9;
 
 /* ---------- Tri alphabétique ---------- */
-function getSortedOwners() {
+function getSortedOwners(siteFilter) {
   const profiles = getProfiles();
-  return Object.keys(profiles).sort((a, b) => {
+  return Object.keys(profiles).filter(k => profileMatchesSite(profiles[k], siteFilter)).sort((a, b) => {
     const nameA = profiles[a].name || a;
     const nameB = profiles[b].name || b;
     return nameA.localeCompare(nameB, "fr");
@@ -205,16 +289,18 @@ function calcPrestation(p) {
   return { days, totalVisits, basePrice, keyPrice, total };
 }
 
-function getAllPrestations() {
+function getAllPrestations(siteFilter) {
   const profiles = getProfiles();
   const all = [];
   Object.entries(profiles).forEach(([key, p]) => {
+    if (!profileMatchesSite(p, siteFilter)) return;
     const animals = (p.animals && p.animals.length > 0)
       ? [...p.animals].sort((a, b) => (a.name || "").localeCompare(b.name || "", "fr"))
       : null;
     const animalName = animals
       ? animals.map(a => a.name).filter(Boolean).join(", ")
       : (p.name || key);
+    const animalPhoto = animals ? ((animals.find(a => a.photo) || {}).photo || "") : "";
     const animalTypes = animals
       ? animals.flatMap(a => a.animal_type || [])
       : (p.animal_type || []);
@@ -222,9 +308,11 @@ function getAllPrestations() {
       all.push({
         ...pr,
         animalName: animalName || "À définir",
+        animalPhoto,
         animalTypes,
         ownerKey: key,
         ownerName: p.name || key,
+        site: siteOfProfile(p),
         idx
       });
     });
@@ -232,19 +320,19 @@ function getAllPrestations() {
   return all.sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
 }
 
-function getGardesEnCours() {
+function getGardesEnCours(siteFilter) {
   const today = fmtISODate(new Date());
-  return getAllPrestations().filter(p => p.date_start <= today && p.date_end >= today);
+  return getAllPrestations(siteFilter).filter(p => p.date_start <= today && p.date_end >= today);
 }
 
-function getGardesAvenir() {
+function getGardesAvenir(siteFilter) {
   const today = fmtISODate(new Date());
-  return getAllPrestations().filter(p => p.date_start > today);
+  return getAllPrestations(siteFilter).filter(p => p.date_start > today);
 }
 
-function getClesARegler() {
+function getClesARegler(siteFilter) {
   const today = fmtISODate(new Date());
-  return getAllPrestations().filter(p => {
+  return getAllPrestations(siteFilter).filter(p => {
     const finished = p.date_end < today;
     const unresolved = (!p.keys_picked_up && p.keys_pickup_rdv !== undefined && p.key_return_type !== undefined)
       ? false : false;
@@ -253,11 +341,12 @@ function getClesARegler() {
   });
 }
 
-function getNextKeyRdvs() {
+function getNextKeyRdvs(siteFilter) {
   const now = new Date();
   const items = [];
   const profiles = getProfiles();
   Object.entries(profiles).forEach(([key, p]) => {
+    if (!profileMatchesSite(p, siteFilter)) return;
     (p.prestations || []).forEach((pr, idx) => {
       const animals = getSortedAnimals(key);
       const animalName = animals.map(a => a.name).filter(Boolean).join(", ") || "À définir";
@@ -368,12 +457,12 @@ function fmtDateTime(iso) {
 
 /* ---------- Emoji animal ---------- */
 function animalEmoji(types) {
-  if (!types || types.length === 0) return "🐾";
+  if (!types || types.length === 0) return ic("paw");
   const t = types[0];
-  if (t === "Chat") return "🐱";
-  if (t === "Chien") return "🐶";
-  if (t === "Lapin") return "🐰";
-  return "🐾";
+  if (t === "Chat") return ic("cat");
+  if (t === "Chien") return ic("dog");
+  if (t === "Lapin") return ic("rabbit");
+  return ic("paw");
 }
 
 /* ---------- Navigation ---------- */
@@ -444,6 +533,15 @@ function findMatchingOwner(criteria) {
 /* ---------- Géocodage des adresses (Nominatim / OpenStreetMap, gratuit) ----------
    Limite d'usage : ~1 requête/seconde max, usage personnel/léger uniquement.
    On met en cache lat/lng sur la fiche elle-même pour ne géocoder qu'une fois. */
+/* Adresse + ville (évite de localiser l'adresse dans la mauvaise ville) */
+function fullAddress(info) {
+  const a = ((info && info.address) || "").trim();
+  const c = ((info && info.city) || "").trim();
+  if (!a) return "";
+  if (!c) return a;
+  return a.toLowerCase().includes(c.toLowerCase()) ? a : `${a}, ${c}`;
+}
+
 async function geocodeAddress(address) {
   if (!address || !address.trim()) return null;
   try {
@@ -465,17 +563,17 @@ async function geocodeAddress(address) {
 async function ensureGeocoded(ownerKey) {
   const profiles = getProfiles();
   const p = profiles[ownerKey];
-  if (!p || !p.info || !p.info.address) return null;
+  if (!p || !p.info || !fullAddress(p.info)) return null;
 
-  if (p.info.geocoded_lat != null && p.info.geocoded_address === p.info.address) {
+  if (p.info.geocoded_lat != null && p.info.geocoded_address === fullAddress(p.info)) {
     return { lat: p.info.geocoded_lat, lng: p.info.geocoded_lng };
   }
 
-  const coords = await geocodeAddress(p.info.address);
+  const coords = await geocodeAddress(fullAddress(p.info));
   if (coords) {
     p.info.geocoded_lat = coords.lat;
     p.info.geocoded_lng = coords.lng;
-    p.info.geocoded_address = p.info.address;
+    p.info.geocoded_address = fullAddress(p.info);
     profiles[ownerKey] = p;
     saveProfiles(profiles);
   }
@@ -490,7 +588,7 @@ function setManualCoords(ownerKey, lat, lng) {
   if (!p || !p.info) return;
   p.info.geocoded_lat = lat;
   p.info.geocoded_lng = lng;
-  p.info.geocoded_address = p.info.address;
+  p.info.geocoded_address = fullAddress(p.info);
   profiles[ownerKey] = p;
   saveProfiles(profiles);
 }

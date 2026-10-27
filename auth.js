@@ -4,11 +4,11 @@
 import { supabase } from "./supabase-config.js";
 
 // Crée un nouveau compte (inscription). Le prénom est stocké dans les métadonnées utilisateur.
-export async function signUp(email, password, name) {
+export async function signUp(email, password, name, site) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { name } }
+    options: { data: { name, sites: Array.isArray(site) ? site : (site ? [site] : []) } }
   });
   if (error) throw error;
   return data;

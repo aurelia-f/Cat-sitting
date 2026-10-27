@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cat Sitting — Préférences</title>
+<title>Petsitting — Préférences</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#E8896A">
-<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#EF878B">
+<link rel="apple-touch-icon" href="logo.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="style.css">
@@ -15,8 +15,8 @@
 <div class="app">
 
   <div class="topbar">
-    <div class="back-btn" id="backBtn">←</div>
-    <h1>⚙️ Mes préférences</h1>
+    <div class="back-btn" id="backBtn"><i data-ic="arrow-left"></i></div>
+    <h1><i data-ic="gear"></i> Mes préférences</h1>
   </div>
 
   <div class="card-sub" style="margin-bottom:16px;">
@@ -24,7 +24,7 @@
   </div>
 
   <div class="section">
-    <div class="section-head"><h2>🏠 Mon adresse</h2></div>
+    <div class="section-head"><h2><i data-ic="home"></i> Mon adresse</h2></div>
     <div class="card">
       <div class="card-sub" style="margin-bottom:8px;">Pour l'afficher sur les cartes avec une pastille différente.</div>
       <input type="text" id="homeAddressInput" placeholder="Ex : 12 rue des Lilas, Paris 11e">
@@ -43,7 +43,7 @@
   </div>
 
   <div class="section">
-    <div class="section-head"><h2>🔑 Formule Délicat</h2></div>
+    <div class="section-head"><h2><i data-ic="key"></i> Formule Délicat</h2></div>
     <div class="card">
       <div class="pill-group" id="difficultyPrefGroup">
         <div class="pill" data-value="delicat_first">Faire les Délicat en premier</div>
@@ -54,16 +54,18 @@
   </div>
 
   <div class="section">
-    <div class="section-head"><h2>🕐 Heure de départ habituelle</h2></div>
+    <div class="section-head"><h2><i data-ic="clock"></i> Heure de départ habituelle</h2></div>
     <div class="card">
       <input type="time" id="startTimeInput">
     </div>
   </div>
 
-  <button class="btn btn-primary mt-8" id="saveBtn">💾 Enregistrer</button>
+  <button class="btn btn-primary mt-8" id="saveBtn"><i data-ic="save"></i> Enregistrer</button>
 
 </div>
 
+<script src="icons.js" defer></script>
+<script src="footer.js" defer></script>
 <script src="storage.js"></script>
 <script type="module" src="cloudsync.js"></script>
 <script type="module" src="preferences.js"></script>

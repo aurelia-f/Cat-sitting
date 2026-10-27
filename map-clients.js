@@ -55,7 +55,7 @@ function popupHtml(item) {
     <strong>${escapeHtml(item.name)}</strong><br>
     ${escapeHtml(animalNames)}<br>
     <a href="fiche.html?key=${encodeURIComponent(item.key)}">Voir la fiche →</a><br>
-    <button class="btn btn-sm btn-secondary mt-8" data-enable-drag="${escapeHtml(item.key)}">📍 Déplacer</button>
+    <button class="btn btn-sm btn-secondary mt-8" data-enable-drag="${escapeHtml(item.key)}">${ic("pin")} Déplacer</button>
   `;
 }
 
@@ -145,11 +145,11 @@ async function run() {
   if (hasHome) {
     const homeIcon = L.divIcon({
       className: "",
-      html: `<div style="background:var(--green,#6DB98A); color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.3);">🏠</div>`,
+      html: `<div style="background:var(--green,#6DB98A); color:#fff; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.3);">${ic("home")}</div>`,
       iconSize: [30, 30],
       iconAnchor: [15, 15]
     });
-    L.marker([prefs.home_lat, prefs.home_lng], { icon: homeIcon }).addTo(map).bindPopup(`<strong>🏠 Mon adresse</strong>`);
+    L.marker([prefs.home_lat, prefs.home_lng], { icon: homeIcon }).addTo(map).bindPopup(`<strong>${ic("home")} Mon adresse</strong>`);
   }
 
   located.forEach(addClientMarker);
@@ -165,10 +165,10 @@ async function run() {
       <div class="card" id="unlocated-${escapeHtml(u.key)}">
         <div class="card-row">
           <div>
-            <div class="card-title" style="font-size:14px;">👤 ${escapeHtml(u.name)}</div>
+            <div class="card-title" style="font-size:14px;">${ic("user")} ${escapeHtml(u.name)}</div>
             <div class="card-sub">${escapeHtml(u.address)}</div>
           </div>
-          <button class="btn btn-sm btn-secondary" data-place-manually="${escapeHtml(u.key)}">📍 Placer manuellement</button>
+          <button class="btn btn-sm btn-secondary" data-place-manually="${escapeHtml(u.key)}">${ic("pin")} Placer manuellement</button>
         </div>
       </div>
     `).join("");
@@ -177,7 +177,7 @@ async function run() {
       btn.addEventListener("click", () => {
         placingKey = btn.dataset.placeManually;
         document.getElementById("map").style.cursor = "crosshair";
-        showStatus(`Clique sur la carte à l'endroit de ${btn.closest(".card").querySelector(".card-title").textContent.replace("👤 ", "")}.`);
+        showStatus(`Clique sur la carte à l'endroit de ${btn.closest(".card").querySelector(".card-title").textContent.trim()}.`);
         map.getContainer().scrollIntoView({ behavior: "smooth", block: "center" });
       });
     });

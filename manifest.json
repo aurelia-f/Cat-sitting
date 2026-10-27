@@ -1,11 +1,26 @@
 {
-  "name": "Cat Sitting",
-  "short_name": "Cat Sitting",
-  "start_url": "/index.html",
+  "name": "Petsitting",
+  "short_name": "Petsitting",
+  "start_url": "./index.html",
   "display": "standalone",
-  "theme_color": "#E8896A",
-  "background_color": "#FFF9F5",
+  "theme_color": "#EF878B",
+  "background_color": "#FAEFDD",
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
   ]
 }

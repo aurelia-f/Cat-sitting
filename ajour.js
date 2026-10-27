@@ -35,7 +35,7 @@ function setKeysReturned(ownerKey, idx, value) {
 }
 
 function render() {
-  const all = getAllPrestations();
+  const all = getAllPrestations(ALL_SITES);
   const pending = all
     .filter(p => p.payment_status !== "paye" || !p.keys_returned)
     .sort((a, b) => new Date(a.date_end) - new Date(b.date_end));
@@ -43,7 +43,7 @@ function render() {
   const list = document.getElementById("pendingList");
 
   if (pending.length === 0) {
-    list.innerHTML = `<div class="empty-state">🎉 Tout est à jour ! Aucun paiement en attente, aucune clé à rendre.</div>`;
+    list.innerHTML = `<div class="empty-state">${ic("sparkles")} Tout est à jour ! Aucun paiement en attente, aucune clé à rendre.</div>`;
     return;
   }
 
@@ -52,22 +52,22 @@ function render() {
     const keysDone = !!p.keys_returned;
 
     const paymentRow = paymentDone
-      ? `<div class="flex-between"><span class="small">💶 Paiement</span><span class="badge badge-green">✓ Payé</span></div>`
+      ? `<div class="flex-between"><span class="small">${ic("euro")} Paiement</span><span class="badge badge-green">${ic("check")} Payé</span></div>`
       : `<div class="flex-between">
-           <span class="small">💶 Paiement</span>
+           <span class="small">${ic("euro")} Paiement</span>
            <div class="flex gap-8">
-             <div class="icon-action" style="color:var(--green);" data-pay-ok="1" data-owner="${escapeHtml(p.ownerKey)}" data-idx="${p.idx}" title="J'ai été payé(e)">✓</div>
-             <div class="icon-action" style="color:var(--red);" data-pay-no="1" data-owner="${escapeHtml(p.ownerKey)}" data-idx="${p.idx}" title="Pas encore payé(e)">✗</div>
+             <div class="icon-action" style="color:var(--green);" data-pay-ok="1" data-owner="${escapeHtml(p.ownerKey)}" data-idx="${p.idx}" title="J'ai été payé(e)">${ic("check")}</div>
+             <div class="icon-action" style="color:var(--red);" data-pay-no="1" data-owner="${escapeHtml(p.ownerKey)}" data-idx="${p.idx}" title="Pas encore payé(e)">${ic("x")}</div>
            </div>
          </div>`;
 
     const keysRow = keysDone
-      ? `<div class="flex-between mt-8"><span class="small">🔑 Clés</span><span class="badge badge-green">✓ Rendues</span></div>`
+      ? `<div class="flex-between mt-8"><span class="small">${ic("key")} Clés</span><span class="badge badge-green">${ic("check")} Rendues</span></div>`
       : `<div class="flex-between mt-8">
-           <span class="small">🔑 Clés</span>
+           <span class="small">${ic("key")} Clés</span>
            <div class="flex gap-8">
-             <div class="icon-action" style="color:var(--green);" data-keys-ok="1" data-owner="${escapeHtml(p.ownerKey)}" data-idx="${p.idx}" title="J'ai rendu les clés">✓</div>
-             <div class="icon-action" style="color:var(--purple);" data-keys-plan="1" data-owner="${escapeHtml(p.ownerKey)}" data-idx="${p.idx}" title="Programmer un rendu de clé">→</div>
+             <div class="icon-action" style="color:var(--green);" data-keys-ok="1" data-owner="${escapeHtml(p.ownerKey)}" data-idx="${p.idx}" title="J'ai rendu les clés">${ic("check")}</div>
+             <div class="icon-action" style="color:var(--purple);" data-keys-plan="1" data-owner="${escapeHtml(p.ownerKey)}" data-idx="${p.idx}" title="Programmer un rendu de clé">${ic("arrow-right")}</div>
            </div>
          </div>`;
 

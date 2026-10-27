@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cat Sitting — À jour</title>
+<title>Petsitting — À jour</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#E8896A">
-<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#EF878B">
+<link rel="apple-touch-icon" href="logo.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="style.css">
@@ -15,18 +15,20 @@
 <div class="app">
 
   <div class="topbar">
-    <div class="back-btn" id="backBtn">←</div>
-    <h1>✅ À jour</h1>
+    <div class="back-btn" id="backBtn"><i data-ic="arrow-left"></i></div>
+    <h1><i data-ic="check-circle"></i> À jour</h1>
   </div>
 
   <div class="card-sub mt-8" style="margin-bottom:16px;">
-    Tout ce qui n'est pas encore réglé : paiements en attente et clés pas encore rendues. Coche ✓ dès que c'est fait.
+    Tout ce qui n'est pas encore réglé : paiements en attente et clés pas encore rendues. Coche la case dès que c'est fait.
   </div>
 
   <div id="pendingList"></div>
 
 </div>
 
+<script src="icons.js" defer></script>
+<script src="footer.js" defer></script>
 <script src="storage.js"></script>
 <script type="module" src="cloudsync.js"></script>
 <script type="module" src="ajour.js"></script>

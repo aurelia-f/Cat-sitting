@@ -40,7 +40,7 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
   let homeLng = prefs.home_lng;
 
   if (homeAddress && homeAddress !== prefs.home_address) {
-    btn.textContent = "📍 Localisation de ton adresse…";
+    btn.innerHTML = ic("pin") + " Localisation de ton adresse…";
     btn.disabled = true;
     const coords = await geocodeAddress(homeAddress);
     if (coords) {
@@ -51,7 +51,7 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
       homeLng = null;
       alert("Ton adresse n'a pas pu être localisée — elle est quand même enregistrée, mais n'apparaîtra pas sur les cartes.");
     }
-    btn.textContent = "💾 Enregistrer";
+    btn.innerHTML = ic("save") + " Enregistrer";
     btn.disabled = false;
   } else if (!homeAddress) {
     homeLat = null;

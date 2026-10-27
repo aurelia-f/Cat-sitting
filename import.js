@@ -98,7 +98,7 @@ function updatePriceComparison() {
 
   const mailBit = parsed && parsed.priceAnnounced ? `Montant du mail : ${parsed.priceAnnounced} · ` : "";
   const ecart = parsed && parsed.priceAnnouncedNumber != null && Math.abs(parsed.priceAnnouncedNumber - autoCalc.total) > 0.5
-    ? ` ⚠️ écart avec le calcul de l'app`
+    ? ` ${ic("alert")} écart avec le calcul de l'app`
     : "";
   hintEl.textContent = `${mailBit}Calcul automatique de l'app : ${autoCalc.total}€${ecart} — corrige le prix ci-dessus si besoin.`;
 }
@@ -342,6 +342,7 @@ document.getElementById("confirmImportBtn").addEventListener("click", async () =
         special_notes: parsed && parsed.remarks ? `(Depuis mail importé) ${parsed.remarks}` : ""
       },
       animals: [],
+      site: getCreationSite(),
       prestations: [newPrestation]
     };
   }

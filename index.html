@@ -3,20 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cat Sitting — Connexion</title>
+<title>Petsitting — Connexion</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#E8896A">
-<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#EF878B">
+<link rel="apple-touch-icon" href="logo.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="style.css">
+<script src="footer.js" defer></script>
 </head>
 <body>
 <div class="app login-wrap">
 
   <div class="login-hero">
-    <div class="paw" id="pawTrigger" style="cursor:pointer;">🐾</div>
-    <h1>Cat Sitting</h1>
+    <img class="login-logo" src="logo.png" alt="Logo Petsitting">
+    <h1>Petsitting</h1>
     <p>Gérez vos gardes en toute simplicité</p>
   </div>
 
@@ -40,6 +41,12 @@
   <div id="viewSignup" style="display:none;">
     <label>Prénom</label>
     <input type="text" id="newName" placeholder="Ex : Aurélia">
+    <label>D'où viens-tu ? <span class="text-lt small">(ton site de petsitting, facultatif)</span></label>
+    <input type="text" id="newSite" list="siteList" placeholder="Choisis dans la liste ou écris le nom" autocomplete="off">
+    <datalist id="siteList"></datalist>
+    <div id="extraSites"></div>
+    <a href="#" id="addExtraSite" class="small" style="color:var(--accent-dk); font-weight:bold;"><i data-ic="plus"></i> Je travaille aussi pour un autre site</a>
+    <div class="field-hint">Si ton site n'est pas dans la liste, écris son nom : il sera proposé aux suivantes.</div>
     <label>Email</label>
     <input type="email" id="newEmail" placeholder="ton@email.fr">
     <label>Mot de passe</label>
@@ -53,30 +60,12 @@
 
 </div>
 
-<!-- Modal : accès admin (code secret) -->
-<div class="modal-overlay" id="modalAdminCode">
-  <div class="modal">
-    <div class="modal-head">
-      <h3>Accès admin</h3>
-      <button class="modal-close" data-close="modalAdminCode">✕</button>
-    </div>
-    <p class="small text-lt">Connecte-toi d'abord avec ton compte, puis reviens ici avec le code.</p>
-    <label>Code secret</label>
-    <input type="text" id="adminCodeInput" inputmode="numeric" maxlength="4" placeholder="••••">
-    <div class="field-hint" id="adminCodeError" style="color:var(--red); display:none;">Code incorrect.</div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" data-close="modalAdminCode">Annuler</button>
-      <button class="btn btn-primary" id="confirmAdminCode">Valider</button>
-    </div>
-  </div>
-</div>
-
 <!-- Modal : mot de passe oublié -->
 <div class="modal-overlay" id="modalForgotPassword">
   <div class="modal">
     <div class="modal-head">
       <h3>Mot de passe oublié</h3>
-      <button class="modal-close" data-close="modalForgotPassword">✕</button>
+      <button class="modal-close" data-close="modalForgotPassword"><i data-ic="x"></i></button>
     </div>
     <p class="small text-lt">Indique ton email, on t'envoie un lien pour choisir un nouveau mot de passe.</p>
     <label>Email</label>

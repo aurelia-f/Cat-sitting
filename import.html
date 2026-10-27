@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cat Sitting — Importer une mission</title>
+<title>Petsitting — Importer une mission</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#E8896A">
-<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#EF878B">
+<link rel="apple-touch-icon" href="logo.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="style.css">
@@ -15,8 +15,8 @@
 <div class="app">
 
   <div class="topbar">
-    <div class="back-btn" id="backBtn">←</div>
-    <h1>📩 Importer une mission</h1>
+    <div class="back-btn" id="backBtn"><i data-ic="arrow-left"></i></div>
+    <h1><i data-ic="mail"></i> Importer une mission</h1>
   </div>
 
   <div id="step1">
@@ -24,13 +24,13 @@
       Colle ici le texte complet du mail de mission que tu reçois. L'app essaie d'en extraire les infos automatiquement — tu pourras tout vérifier et corriger avant de valider.
     </div>
     <textarea id="mailInput" rows="12" placeholder="Voici une nouvelle mission Délicat qui vous a été affectée du..."></textarea>
-    <button class="btn btn-primary mt-16" id="analyzeBtn">🔍 Analyser le mail</button>
+    <button class="btn btn-primary mt-16" id="analyzeBtn"><i data-ic="search"></i> Analyser le mail</button>
   </div>
 
   <div id="step2" style="display:none;">
 
     <div id="matchBanner" class="card tint-orange" style="display:none; margin-bottom:16px;">
-      <div class="card-title" style="font-size:14px;">⚠️ Cette personne existe peut-être déjà</div>
+      <div class="card-title" style="font-size:14px;"><i data-ic="alert"></i> Cette personne existe peut-être déjà</div>
       <div class="card-sub" id="matchBannerText"></div>
       <div class="modal-actions">
         <button class="btn btn-secondary btn-sm" id="linkExistingBtn">Lier à cette fiche</button>
@@ -39,7 +39,7 @@
     </div>
 
     <div class="section sec-green">
-      <div class="section-head"><h2>💶 Mission détectée</h2></div>
+      <div class="section-head"><h2><i data-ic="euro"></i> Mission détectée</h2></div>
       <div class="card">
         <label>Formule</label>
         <div class="pill-group" id="formulaPillGroup"></div>
@@ -70,7 +70,7 @@
     </div>
 
     <div class="section sec-orange">
-      <div class="section-head"><h2>👤 Client</h2></div>
+      <div class="section-head"><h2><i data-ic="user"></i> Client</h2></div>
       <div class="card">
         <label>Nom</label>
         <input type="text" id="c_name">
@@ -84,19 +84,21 @@
     </div>
 
     <div class="section sec-purple">
-      <div class="section-head"><h2>📝 Remarques du client (brut)</h2></div>
+      <div class="section-head"><h2><i data-ic="note"></i> Remarques du client (brut)</h2></div>
       <div class="card">
         <div class="card-sub">Lis ce texte pour noter toi-même les infos sur l'animal (nom, race, comportement, santé) — l'extraction automatique n'est pas fiable pour ces détails.</div>
         <textarea id="c_remarks" rows="6" class="mt-8" readonly></textarea>
       </div>
     </div>
 
-    <button class="btn btn-primary mt-8" id="confirmImportBtn">✅ Valider et créer la prestation</button>
+    <button class="btn btn-primary mt-8" id="confirmImportBtn"><i data-ic="check-circle"></i> Valider et créer la prestation</button>
     <button class="btn btn-ghost btn-block mt-8" id="cancelImportBtn">Annuler</button>
   </div>
 
 </div>
 
+<script src="icons.js" defer></script>
+<script src="footer.js" defer></script>
 <script src="storage.js"></script>
 <script type="module" src="cloudsync.js"></script>
 <script type="module" src="import.js"></script>

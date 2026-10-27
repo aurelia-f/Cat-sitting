@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cat Sitting — Budget</title>
+<title>Petsitting — Budget</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#E8896A">
-<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#EF878B">
+<link rel="apple-touch-icon" href="logo.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="style.css">
@@ -15,8 +15,12 @@
 <div class="app">
 
   <div class="topbar">
-    <div class="back-btn" id="backBtn">←</div>
-    <h1>💶 Budget</h1>
+    <div class="back-btn" id="backBtn"><i data-ic="arrow-left"></i></div>
+    <h1><i data-ic="euro"></i> Budget</h1>
+  </div>
+
+  <div id="siteBar" class="site-bar" style="display:none;">
+    <select id="budgetSite" aria-label="Site"></select>
   </div>
 
   <div class="stats-row">
@@ -35,9 +39,9 @@
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="mois">📅 Par mois</button>
-    <button class="tab-btn" data-tab="client">👤 Par client</button>
-    <button class="tab-btn" data-tab="formule">💶 Par formule</button>
+    <button class="tab-btn active" data-tab="mois"><i data-ic="calendar"></i> Par mois</button>
+    <button class="tab-btn" data-tab="client"><i data-ic="user"></i> Par client</button>
+    <button class="tab-btn" data-tab="formule"><i data-ic="euro"></i> Par formule</button>
   </div>
 
   <div class="tab-panel active" id="panel-mois"></div>
@@ -46,6 +50,8 @@
 
 </div>
 
+<script src="icons.js" defer></script>
+<script src="footer.js" defer></script>
 <script src="storage.js"></script>
 <script type="module" src="cloudsync.js"></script>
 <script type="module" src="budget.js"></script>

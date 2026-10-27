@@ -151,10 +151,10 @@ async function loadDay(ds) {
     document.getElementById("unlocatedSection").style.display = "block";
     document.getElementById("unlocatedList").innerHTML = unlocated.map(u => `
       <div class="card">
-        <div class="card-title" style="font-size:14px;">👤 ${escapeHtml(u.name)}</div>
+        <div class="card-title" style="font-size:14px;">${ic("user")} ${escapeHtml(u.name)}</div>
         <div class="card-sub">${escapeHtml(u.address)}</div>
       </div>
-    `).join("") + `<button class="btn btn-outline mt-8" id="fixOnMapBtn">📍 Corriger sur la carte des clients</button>`;
+    `).join("") + `<button class="btn btn-outline mt-8" id="fixOnMapBtn">${ic("pin")} Corriger sur la carte des clients</button>`;
     const fixBtn = document.getElementById("fixOnMapBtn");
     if (fixBtn) fixBtn.addEventListener("click", () => goTo("map-clients.html"));
   }
@@ -196,7 +196,7 @@ function preferenceHint(stop) {
   const dur = durationCategory(stop.mcerKey);
   if (dur === "long") badges.push(`<span class="badge badge-blue">⏱️ 1h</span>`);
   if (dur === "court") badges.push(`<span class="badge badge-blue">⏱️ 30 min</span>`);
-  if (stop.mcerKey === "delicat") badges.push(`<span class="badge badge-purple">🔑 Délicat</span>`);
+  if (stop.mcerKey === "delicat") badges.push(`<span class="badge badge-purple">${ic("key")} Délicat</span>`);
   return badges.join(" ");
 }
 
@@ -244,17 +244,17 @@ async function renderResults() {
     const stop = stops[stopIdx];
     const animalNames = stop.animals.map(a => a.name).filter(Boolean).join(", ") || "À définir";
     const nextTravel = pos < order.length - 1
-      ? `<div class="card-sub mt-8">🚗 ${fmtDuration(durationMatrix[stopIdx][order[pos + 1]])} jusqu'au prochain arrêt</div>`
+      ? `<div class="card-sub mt-8">${ic("car")} ${fmtDuration(durationMatrix[stopIdx][order[pos + 1]])} jusqu'au prochain arrêt</div>`
       : "";
     const suggestion = (suggestedIdx === stopIdx && pos !== 0)
-      ? `<div class="badge badge-orange mt-8">⭐ Suggéré en premier selon tes préférences</div>`
+      ? `<div class="badge badge-orange mt-8">${ic("star")} Suggéré en premier selon tes préférences</div>`
       : "";
     return `
       <div class="card">
         <div class="card-row">
           <div class="stop-num">${pos + 1}</div>
           <div style="flex:1;">
-            <div class="card-title" style="font-size:14px;">👤 ${escapeHtml(stop.ownerName)} <span class="text-lt small">· ${escapeHtml(animalNames)}</span></div>
+            <div class="card-title" style="font-size:14px;">${ic("user")} ${escapeHtml(stop.ownerName)} <span class="text-lt small">· ${escapeHtml(animalNames)}</span></div>
             <div class="card-sub">${escapeHtml(stop.address)}</div>
             <div class="mt-8">${preferenceHint(stop)}</div>
             ${suggestion}
@@ -309,13 +309,13 @@ async function renderMap() {
   if (prefs.home_lat != null && prefs.home_lng != null) {
     const homeIcon = L.divIcon({
       className: "",
-      html: `<div style="background:var(--green,#6DB98A); color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.3);">🏠</div>`,
+      html: `<div style="background:var(--green,#6DB98A); color:#fff; width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.3);">${ic("home")}</div>`,
       iconSize: [28, 28],
       iconAnchor: [14, 14]
     });
     const homeMarker = L.marker([prefs.home_lat, prefs.home_lng], { icon: homeIcon })
       .addTo(map)
-      .bindPopup(`<strong>🏠 Mon adresse</strong>`);
+      .bindPopup(`<strong>${ic("home")} Mon adresse</strong>`);
     markers.push(homeMarker);
     bounds.push([prefs.home_lat, prefs.home_lng]);
   }
@@ -324,12 +324,12 @@ async function renderMap() {
     const stop = stops[stopIdx];
     const icon = L.divIcon({
       className: "",
-      html: `<div style="background:var(--accent,#E8896A); color:#fff; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.3);">${pos + 1}</div>`,
+      html: `<div style="background:var(--accent-dk,#954A51); color:#fff; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px; border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,0.3);">${pos + 1}</div>`,
       iconSize: [26, 26],
       iconAnchor: [13, 13]
     });
     const marker = L.marker([stop.coords.lat, stop.coords.lng], { icon }).addTo(map);
-    const popupHtml = () => `<strong>${escapeHtml(stop.ownerName)}</strong><br>${escapeHtml(stop.address)}<br><button class="btn btn-sm btn-secondary mt-8" data-enable-drag-stop="${stop.ownerKey}">📍 Déplacer</button>`;
+    const popupHtml = () => `<strong>${escapeHtml(stop.ownerName)}</strong><br>${escapeHtml(stop.address)}<br><button class="btn btn-sm btn-secondary mt-8" data-enable-drag-stop="${stop.ownerKey}">${ic("pin")} Déplacer</button>`;
     marker.bindPopup(popupHtml());
     marker.on("popupopen", () => {
       const btn = document.querySelector(`[data-enable-drag-stop="${stop.ownerKey}"]`);
@@ -360,7 +360,7 @@ async function renderMap() {
   if (orderedCoords.length >= 2) {
     const geometry = await fetchRouteGeometry(orderedCoords);
     if (geometry) {
-      routeLayer = L.geoJSON(geometry, { style: { color: "#E8896A", weight: 4, opacity: 0.8 } }).addTo(map);
+      routeLayer = L.geoJSON(geometry, { style: { color: "#954A51", weight: 4, opacity: 0.8 } }).addTo(map);
     }
   }
 }

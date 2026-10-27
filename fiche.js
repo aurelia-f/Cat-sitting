@@ -21,7 +21,8 @@ if (isNew) {
     name: ownerParam,
     info: { owner_name: ownerParam },
     animals: [],
-    prestations: []
+    prestations: [],
+    site: getCreationSite()
   };
 } else if (currentKey && profiles[currentKey]) {
   currentProfile = JSON.parse(JSON.stringify(profiles[currentKey]));
@@ -65,6 +66,47 @@ function escapeHtml(str) {
 /* ================= ANIMAUX ================= */
 
 let editingAnimalIndex = null;
+let pendingPhoto = null;     // photo réduite (data URL) de l'animal en cours d'édition
+
+function showPhotoPreview() {
+  const img = document.getElementById("a_photo_preview");
+  img.style.display = pendingPhoto ? "" : "none";
+  if (pendingPhoto) img.src = pendingPhoto;
+  document.getElementById("a_photo_remove").style.display = pendingPhoto ? "" : "none";
+}
+/* Réduit la photo (≈ 240 px, JPEG) pour qu'elle reste légère dans la fiche */
+function shrinkPhoto(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 240;
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL("image/jpeg", 0.65));
+      };
+      img.onerror = () => resolve(null);
+      img.src = reader.result;
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+document.getElementById("a_photo_file").addEventListener("change", async (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  pendingPhoto = await shrinkPhoto(f);
+  showPhotoPreview();
+});
+document.getElementById("a_photo_remove").addEventListener("click", (e) => {
+  e.preventDefault();
+  pendingPhoto = null;
+  document.getElementById("a_photo_file").value = "";
+  showPhotoPreview();
+});
 
 function sortedAnimalsLocal() {
   return [...currentProfile.animals].sort((a, b) => (a.name || "").localeCompare(b.name || "", "fr"));
@@ -74,7 +116,7 @@ function renderAnimals() {
   const list = document.getElementById("animalsList");
   const animals = sortedAnimalsLocal();
   if (animals.length === 0) {
-    list.innerHTML = `<div class="empty-state">Aucun animal ajouté pour l'instant 🐾</div>`;
+    list.innerHTML = `<div class="empty-state">Aucun animal ajouté pour l'instant ${ic("paw")}</div>`;
     return;
   }
   list.innerHTML = animals.map(a => {
@@ -82,13 +124,16 @@ function renderAnimals() {
     return `
       <div class="card">
         <div class="card-row">
-          <div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            ${a.photo ? `<img src="${a.photo}" alt="" style="width:48px; height:48px; border-radius:50%; object-fit:cover; flex-shrink:0;">` : ""}
+            <div>
             <div class="card-title">${animalEmoji(a.animal_type)} ${escapeHtml(a.name || "Sans nom")}</div>
             <div class="card-sub">${escapeHtml(a.animal_gender || "")} ${a.animal_gender ? "·" : ""} ${escapeHtml(a.animal_age || "")} ${a.animal_age ? "·" : ""} ${escapeHtml(a.is_cuddly || "")}</div>
+            </div>
           </div>
           <div class="flex gap-8">
-            <div class="icon-action" data-edit-animal="${realIdx}">✏️</div>
-            <div class="icon-action" data-del-animal="${realIdx}">🗑</div>
+            <div class="icon-action" data-edit-animal="${realIdx}">${ic("pencil")}</div>
+            <div class="icon-action" data-del-animal="${realIdx}">${ic("trash")}</div>
           </div>
         </div>
       </div>
@@ -119,6 +164,9 @@ function clearAnimalModal() {
 function openAnimalModal(idx) {
   editingAnimalIndex = (idx === undefined || idx === null) ? null : idx;
   clearAnimalModal();
+  pendingPhoto = (editingAnimalIndex !== null && currentProfile.animals[editingAnimalIndex].photo) || null;
+  document.getElementById("a_photo_file").value = "";
+  showPhotoPreview();
   document.getElementById("animalModalTitle").textContent =
     editingAnimalIndex === null ? "Ajouter un animal" : "Modifier l'animal";
 
@@ -209,6 +257,7 @@ document.getElementById("saveAnimalBtn").addEventListener("click", () => {
     personality: getPillGroupValue("personality", true),
     favorite_things: getPillGroupValue("favorite_things", true),
     dislikes: getPillGroupValue("dislikes", true),
+    photo: pendingPhoto || undefined,
     special_behavior: document.getElementById("a_special_behavior").value.trim(),
     has_litter: getToggle("has_litter"),
     has_water: getToggle("has_water"),
@@ -233,6 +282,7 @@ function loadInfoTab() {
   document.getElementById("info_owner_phone").value = info.owner_phone || "";
   document.getElementById("info_owner_email").value = info.owner_email || "";
   document.getElementById("info_address").value = info.address || "";
+  document.getElementById("info_city").value = info.city || "";
   document.getElementById("info_access_code").value = info.access_code || "";
   document.getElementById("info_vet").value = info.vet || "";
   document.getElementById("info_food").value = info.food || "";
@@ -246,6 +296,7 @@ function collectInfoTab() {
     owner_phone: document.getElementById("info_owner_phone").value.trim(),
     owner_email: document.getElementById("info_owner_email").value.trim(),
     address: document.getElementById("info_address").value.trim(),
+    city: document.getElementById("info_city").value.trim(),
     access_code: document.getElementById("info_access_code").value.trim(),
     vet: document.getElementById("info_vet").value.trim(),
     food: document.getElementById("info_food").value.trim(),
@@ -253,6 +304,97 @@ function collectInfoTab() {
     special_notes: document.getElementById("info_special_notes").value.trim()
   };
 }
+
+/* ================= MESSAGES AU CLIENT (vouvoiement) ================= */
+let msgPresIndex = null;
+
+function firstWord(s) { return (s || "").trim().split(/\s+/)[0] || ""; }
+function listNames(names) {
+  if (names.length <= 1) return names[0] || "votre animal";
+  return names.slice(0, -1).join(", ") + " et " + names[names.length - 1];
+}
+function frDateLong(iso) {
+  if (!iso) return "";
+  return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+}
+function buildMessage(kind) {
+  const p = currentProfile.prestations[msgPresIndex] || {};
+  const info = currentProfile.info || {};
+  const animals = sortedAnimalsLocal().map(a => a.name).filter(Boolean);
+  const plural = animals.length > 1;
+  const who = listNames(animals);
+  const client = firstWord(info.owner_name || currentProfile.name);
+  const me = firstWord(getCurrentUserName());
+  const extra = document.getElementById("msgExtra").value.trim();
+  const hello = client ? `Bonjour ${client},` : "Bonjour,";
+
+  if (kind === "nouvelles") {
+    return `${hello}\n\nJe viens de passer chez vous : ${who} ${plural ? "vont" : "va"} bien. ` +
+      (extra ? `${extra.charAt(0).toUpperCase() + extra.slice(1).replace(/[.!]+$/, "")}. ` : "") +
+      `Tout est en ordre.\n\nBelle journée,\n${me}`;
+  }
+  // fin de garde + clés
+  let keys;
+  if (p.keys_returned) {
+    keys = "Les clés vous ont bien été rendues.";
+  } else if (p.keys_rdv_date) {
+    keys = `Pour les clés, je vous propose de vous les rendre le ${frDateLong(p.keys_rdv_date)}` +
+      (p.keys_rdv_time ? ` à ${p.keys_rdv_time}` : "") + (p.keys_rdv ? ` (${p.keys_rdv})` : "") +
+      ". Cela vous convient-il ?";
+  } else {
+    keys = "Pour les clés, pourriez-vous me proposer un moment et un lieu pour que je vous les rende ?";
+  }
+  return `${hello}\n\nLa garde de ${who} se termine ${p.date_end ? "le " + frDateLong(p.date_end) : "bientôt"}. ` +
+    `Tout s'est très bien passé.` + (extra ? ` ${extra.charAt(0).toUpperCase() + extra.slice(1).replace(/[.!]+$/, "")}.` : "") +
+    `\n\n${keys}\n\nMerci pour votre confiance,\n${me}`;
+}
+function phoneForWa(raw) {
+  let d = (raw || "").replace(/[^\d+]/g, "");
+  if (d.startsWith("+")) return d.slice(1);
+  if (d.startsWith("00")) return d.slice(2);
+  if (d.startsWith("0")) return "33" + d.slice(1);
+  return d;
+}
+function refreshMessage() {
+  const kind = document.querySelector("#msgKind .pill.selected").dataset.value;
+  const text = buildMessage(kind);
+  document.getElementById("msgText").value = text;
+  updateMsgLinks();
+}
+function updateMsgLinks() {
+  const text = document.getElementById("msgText").value;
+  const info = currentProfile.info || {};
+  const phone = (info.owner_phone || "").replace(/\s+/g, "");
+  document.getElementById("msgSms").href = `sms:${phone}?&body=${encodeURIComponent(text)}`;
+  document.getElementById("msgWa").href = `https://wa.me/${phoneForWa(info.owner_phone)}?text=${encodeURIComponent(text)}`;
+  document.getElementById("msgMail").href = `mailto:${info.owner_email || ""}?subject=${encodeURIComponent("Nouvelles de " + listNames(sortedAnimalsLocal().map(a => a.name).filter(Boolean)))}&body=${encodeURIComponent(text)}`;
+  document.getElementById("msgHint").textContent = phone ? "" : "Pas de numéro dans l'onglet Infos : copie le message pour l'envoyer.";
+}
+function openMessage(i) {
+  msgPresIndex = i;
+  document.getElementById("msgExtra").value = "";
+  const p = currentProfile.prestations[i] || {};
+  const today = fmtISODate(new Date());
+  const kind = (p.date_end && p.date_end <= today) ? "fin" : "nouvelles";
+  document.querySelectorAll("#msgKind .pill").forEach(x => x.classList.toggle("selected", x.dataset.value === kind));
+  refreshMessage();
+  document.getElementById("modalMessage").classList.add("open");
+}
+document.querySelectorAll("#msgKind .pill").forEach(pill => pill.addEventListener("click", (e) => {
+  e.stopPropagation();
+  document.querySelectorAll("#msgKind .pill").forEach(x => x.classList.remove("selected"));
+  pill.classList.add("selected");
+  refreshMessage();
+}));
+document.getElementById("msgExtra").addEventListener("input", refreshMessage);
+document.getElementById("msgText").addEventListener("input", updateMsgLinks);
+document.getElementById("msgCopy").addEventListener("click", async () => {
+  const t = document.getElementById("msgText");
+  try { await navigator.clipboard.writeText(t.value); } catch (e) { t.select(); document.execCommand("copy"); }
+  const b = document.getElementById("msgCopy");
+  b.innerHTML = ic("check") + " Copié";
+  setTimeout(() => { b.innerHTML = ic("note") + " Copier"; }, 1500);
+});
 
 /* ================= PRESTATIONS ================= */
 
@@ -273,7 +415,7 @@ function renderPrestations() {
     let keyWarning = "";
     const today = fmtISODate(new Date());
     if (p.date_end < today && !p.keys_returned) {
-      keyWarning = `<div class="badge badge-red mt-8">⚠️ Clés non rendues</div>`;
+      keyWarning = `<div class="badge badge-red mt-8">${ic("alert")} Clés non rendues</div>`;
     }
     return `
       <div class="card tint-green">
@@ -285,14 +427,18 @@ function renderPrestations() {
             ${keyWarning}
           </div>
           <div class="flex gap-8">
-            <div class="icon-action" data-edit-pres="${i}">✏️</div>
-            <div class="icon-action" data-del-pres="${i}">🗑</div>
+            <div class="icon-action" data-msg-pres="${i}" title="Message au client">${ic("chat")}</div>
+            <div class="icon-action" data-edit-pres="${i}">${ic("pencil")}</div>
+            <div class="icon-action" data-del-pres="${i}">${ic("trash")}</div>
           </div>
         </div>
       </div>
     `;
   }).join("");
 
+  list.querySelectorAll("[data-msg-pres]").forEach(btn => {
+    btn.addEventListener("click", () => openMessage(Number(btn.dataset.msgPres)));
+  });
   list.querySelectorAll("[data-edit-pres]").forEach(btn => {
     btn.addEventListener("click", async () => {
       persistProfile(false);
@@ -352,6 +498,17 @@ document.getElementById("deleteFicheBtn").addEventListener("click", async () => 
 document.querySelectorAll("[data-close]").forEach(btn => {
   btn.addEventListener("click", () => btn.closest(".modal-overlay").classList.remove("open"));
 });
+
+/* ---------- Site de la fiche (si plusieurs sites) ---------- */
+(function initSiteField() {
+  const sites = getMySites();
+  if (sites.length < 2) return;
+  const sel = document.getElementById("ficheSite");
+  sel.innerHTML = sites.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+  sel.value = siteOfProfile(currentProfile);
+  document.getElementById("siteField").style.display = "";
+  sel.addEventListener("change", () => { currentProfile.site = sel.value; });
+})();
 
 /* ---------- Init ---------- */
 loadInfoTab();

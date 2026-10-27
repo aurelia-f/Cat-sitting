@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cat Sitting — Admin</title>
+<title>Petsitting — Admin</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#E8896A">
-<link rel="apple-touch-icon" href="icon.svg">
+<meta name="theme-color" content="#EF878B">
+<link rel="apple-touch-icon" href="logo.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -14,32 +14,69 @@
 <div class="app">
 
   <div class="topbar">
-    <div class="back-btn" id="backBtn">←</div>
-    <h1>🔐 Admin</h1>
+    <div class="back-btn" id="backBtn"><i data-ic="arrow-left"></i></div>
+    <h1><i data-ic="lock"></i> Admin</h1>
   </div>
 
   <div class="stats-row">
-    <div class="stat-box">
-      <div class="val" id="statUsers">0</div>
-      <div class="lbl">Comptes</div>
-    </div>
-    <div class="stat-box">
-      <div class="val" id="statFichesTotal">0</div>
-      <div class="lbl">Fiches</div>
-    </div>
-    <div class="stat-box">
-      <div class="val" id="statRevenueTotal">0€</div>
-      <div class="lbl">CA total</div>
-    </div>
+    <div class="stat-box"><div class="val" id="statUsers">0</div><div class="lbl">Comptes</div></div>
+    <div class="stat-box" id="boxFiches"><div class="val" id="statFichesTotal">0</div><div class="lbl">Fiches</div></div>
+    <div class="stat-box" id="boxEmpty" style="display:none;"><div class="val" id="statEmptyAccounts">0</div><div class="lbl">Sans fiche</div></div>
+    <div class="stat-box" id="boxRevMonth"><div class="val" id="statRevenueMonth">0€</div><div class="lbl">CA ce mois</div></div>
+    <div class="stat-box" id="boxRevTotal"><div class="val" id="statRevenueTotal">0€</div><div class="lbl">CA depuis le début</div></div>
+  </div>
+
+  <div id="alertBanner" style="display:none; margin-bottom:14px;"></div>
+
+  <div class="section" id="sitesSection" style="display:none;">
+    <div class="section-head"><h2><i data-ic="building"></i> Par site</h2></div>
+    <div id="sitesSummary"></div>
+    <div class="small text-lt" id="siteFilterInfo" style="display:none; margin-top:6px;"></div>
   </div>
 
   <div class="section">
-    <div class="section-head"><h2>👥 Tous les comptes</h2></div>
+    <div class="section-head"><h2><i data-ic="users"></i> Tous les comptes</h2></div>
+    <div id="searchBar" style="display:none; margin-bottom:10px;">
+      <input type="text" id="searchInput" placeholder="Rechercher un nom ou un email">
+      <select id="sortSelect" style="margin-top:6px;">
+        <option value="login">Trier : dernière connexion</option>
+        <option value="signup">Trier : date d'inscription</option>
+        <option value="fiches">Trier : nombre de fiches</option>
+        <option value="ca">Trier : chiffre d'affaires</option>
+      </select>
+    </div>
     <div id="usersList"></div>
+  </div>
+
+  <div class="section" id="adminsSection" style="display:none;">
+    <div class="section-head"><h2><i data-ic="shield"></i> Accès admin</h2></div>
+    <div class="small text-lt" style="margin-bottom:8px;">Un admin de site voit seulement les comptes de SON site : dernière connexion, inscription, comptes sans fiche. Ni chiffre d'affaires, ni fiches, ni bugs. Sans site, l'admin voit tous les comptes (consultation).</div>
+    <div id="adminsList"></div>
+    <input type="email" id="newAdminEmail" placeholder="Email du compte à ajouter" style="margin-top:8px;">
+    <input type="text" id="newAdminSite" list="adminSiteList" placeholder="Site de cet admin (laisser vide = tous les comptes)" autocomplete="off" style="margin-top:6px;">
+    <datalist id="adminSiteList"></datalist>
+    <button class="btn btn-primary btn-sm" id="addAdminBtn" style="margin-top:6px;">Ajouter</button>
+    <div class="small" id="adminsMsg" style="margin-top:6px; display:none;"></div>
+  </div>
+
+  <div class="section" id="siteManageSection" style="display:none;">
+    <div class="section-head"><h2><i data-ic="merge"></i> Gérer les sites</h2></div>
+    <div class="small text-lt" style="margin-bottom:8px;">Si deux sites sont des doublons (« CatHome » et « Cat Home »), fusionne-les : les comptes, fiches et admins passent sur le nom choisi.</div>
+    <div id="siteManageList"></div>
+  </div>
+
+  <div class="section" id="bugsSection">
+    <div class="section-head">
+      <h2><i data-ic="bug"></i> Erreurs &amp; signalements <span id="bugBadge"></span></h2>
+      <button class="btn btn-sm btn-ghost" id="markReadBtn">Tout marquer lu</button>
+    </div>
+    <div id="bugsList"></div>
   </div>
 
 </div>
 
+<script src="icons.js" defer></script>
+<script src="footer.js" defer></script>
 <script src="storage.js"></script>
 <script type="module" src="cloudsync.js"></script>
 <script type="module" src="admin.js"></script>
