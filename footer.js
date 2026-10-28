@@ -1,6 +1,6 @@
 // Pied de page commun à toutes les pages
 (function () {
-  var VERSION = "36";
+  var VERSION = "37";
   function build() {
     if (document.querySelector(".app-footer")) return;
     var f = document.createElement("footer");

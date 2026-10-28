@@ -208,6 +208,10 @@ document.getElementById("pushBtn").addEventListener("click", async () => {
   refreshPushLabel();
 });
 document.getElementById("accPrefsBtn").addEventListener("click", () => goTo("preferences.html"));
+document.getElementById("tutoBtn").addEventListener("click", () => {
+  document.getElementById("modalAccount").classList.remove("open");
+  if (window.startTuto) window.startTuto();
+});
 document.getElementById("accSiteBtn").addEventListener("click", () => {
   document.getElementById("modalAccount").classList.remove("open");
   openSiteModal(false);
@@ -389,3 +393,7 @@ document.getElementById("confirmAdminCode").addEventListener("click", async () =
   sessionStorage.setItem("cs-admin-code", code);
   goTo("admin.html");
 });
+
+/* Tuto de bienvenue : se lance tout seul la première fois */
+if (window.maybeStartTuto) window.maybeStartTuto();
+else window.addEventListener("load", () => window.maybeStartTuto && window.maybeStartTuto());
