@@ -210,7 +210,13 @@ document.getElementById("pushBtn").addEventListener("click", async () => {
 document.getElementById("accPrefsBtn").addEventListener("click", () => goTo("preferences.html"));
 document.getElementById("tutoBtn").addEventListener("click", () => {
   document.getElementById("modalAccount").classList.remove("open");
-  if (window.startTuto) window.startTuto();
+  if (window.startTuto) { window.startTuto(); return; }
+  // tuto.js pas encore chargé : on le charge maintenant
+  const sc = document.createElement("script");
+  sc.src = "tuto.js?v=" + Date.now();
+  sc.onload = () => window.startTuto && window.startTuto();
+  sc.onerror = () => alert("Le fichier tuto.js est introuvable sur le site. Ajoute-le dans ton dossier puis refais un push.");
+  document.body.appendChild(sc);
 });
 document.getElementById("accSiteBtn").addEventListener("click", () => {
   document.getElementById("modalAccount").classList.remove("open");

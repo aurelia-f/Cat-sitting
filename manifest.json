@@ -1,6 +1,6 @@
 {
-  "name": "Petsitting",
-  "short_name": "Petsitting",
+  "name": "Pet Sitting",
+  "short_name": "Pet Sitting",
   "start_url": "./index.html",
   "display": "standalone",
   "theme_color": "#EF878B",

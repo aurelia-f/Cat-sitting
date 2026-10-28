@@ -180,7 +180,7 @@ window.logOutSupabase = async function () {
 
 
 /* ---------- Rapports de bugs / erreurs ---------- */
-const APP_VERSION = "v33";
+const appVersion = () => "v" + (self.APP_VERSION || "?");
 let autoBugCount = 0;
 const seenBugs = new Set();
 
@@ -201,7 +201,7 @@ window.reportBug = async function (opts) {
       details: cut(opts.details, 3500),
       user_email: email,
       user_agent: navigator.userAgent,
-      app_version: APP_VERSION
+      app_version: appVersion()
     });
     return !error;
   } catch (e) {
